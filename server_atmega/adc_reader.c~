@@ -1,0 +1,30 @@
+#include <stdio.h>
+#include <util/delay.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <avr/io.h>
+#include "../../avr_common/uart.h"
+
+uint8_t v;
+
+int main(int argc, char** argv) {
+  printf_init();
+
+  //settare ADSC, ADATE di ADCSRA o ADTS di ADCSRB come 1 logico
+  
+  //abilitato la porta A in lettura
+  ADMUX = 1<<ADLAR;                      //imponi risultato right adjusted
+  ADCSRA |= 1<<7;
+
+  const uint8_t mask = (1<<6);
+  while(1) {
+    v=0;
+    ADCSRA |= 1<<6;                       //inizio la conversione
+    while((ADCSRA&mask) != 0);            //attendo la fine della conversione
+    v = ADCH;
+    printf("value: %u\n", v);
+    _delay_ms(1000);
+  }
+  
+  return 0;
+}
