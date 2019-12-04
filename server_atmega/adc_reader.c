@@ -13,7 +13,7 @@ uint8_t in_pin;
 int main(int argc, char** argv) {
 
   DDRF &= 0x00;
-  PORTF &= 0xFF;
+  PORTF != 0xFF;
   printf_init();
   int v = 0;
   uint8_t pin = 1;
