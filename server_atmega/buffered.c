@@ -93,6 +93,8 @@ int BufferingAllocator_sendBlock(BUfferingAllocator* ba, void* block_, const cha
   //invialo alla seriale tramite write
   //da controllare che invia tutti i byte
   ssize_t sent = write(fd, block, sizeof(block));
+
+  
   /*
   if(!ret) {
     fprintf(stderr,"Error on sending block info.\n");
