@@ -12,14 +12,12 @@ typedef struct _data_pkg {
 } DataPkg;
 
 //AA: blocco di DataPkg basata su SLAB allocator
-typedef struct _buffering_mode_allocator {
+typedef struct _buffered_mode_allocator {
   char* memory;                      // memoria esterna messa a disposizione
   int memory_size;                   // quanta memoria è messa a disposizione
-  int pkg_list_size;                 // quanti pacchetti contiene il blocco
-  DataPkg* pkg_list;                 // lista di pacchetti da inviare in blocco
+  int pkg_list_size;                 // quanti pacchetti vengono mappati
+  int* pkg_list;                     // lista di indici che mappa i pacchetti da inviare contenuti nel buffer di memoria
   int pkg_size;                      // grandezza in bytes di un singolo pacchetto
   int first_pkg;                     // indice del primo pacchetto disponibile
-} BufferingModeAllocator;
+} BufferedModeAllocator;
 
-
-//metodi

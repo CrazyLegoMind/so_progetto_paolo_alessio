@@ -1,0 +1,2 @@
+Prendendo spunto dalla slide 06 di Grisetti, N_max corrisponde a pkg_list_size mentre item_size corrisponde a pkg_size. 
+Seguire il codice di prova nella directory source/06_memory_allocation/exercise_slab_allocator

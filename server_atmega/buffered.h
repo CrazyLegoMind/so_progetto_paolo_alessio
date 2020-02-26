@@ -1,42 +1,19 @@
 #pragma once
+#include "packets.h"
 
+/* AA:  metodi per la gestione del buffered mode */
 
-//------ AA ---------//
-//attendo approvazione da Paolo...
+/* funzione che inizializza l'allocatore */
+int BufferedModeAllocator_init(BufferingModeAllocator* bma, int pkg_size, int pkg_list_size, char* memory, int memory_size);
 
-static const int NullIdx=-1;
-static const int DetachedIdx=-2;
+/* funzione che restituisce il primo blocco disponibile */
+void* BufferedModeAllocator_getBlock(BufferingModeAllocator* allocator);
 
-typedef enum {
-	      Triggered = -1,
-	      NotTriggered = -2
-} BufferingStatus;
+/* funzione che elimina dall'allocatore il blocco di memoria specificato */
+int BufferedModeAllocator_releaseBlock(BufferingModeAllocator* allocator, void* block);
 
-typedef struct BufferingAllocator{
-  
-  char* buffer;        //contiguous buffer managed by the system
-  int*  free_list;     //list of linked objects
-  int buffer_size;     //size of the buffer in bytes
-
-  int size;            //number of free blocks
-  int size_max;        //maximum number of blocks
-  int item_size;       //size of a block
-  
-  int first_idx;       //pointer to the first bucket
-  int bucket_size;     // size of a bucket
-
-  BufferingStatus status;
-} BuuferingAllocator;
-
-
-BufferingAllocator BufferingAllocator_init(BufferingAllocator* allocator,
-			int item_size,
-			int num_items,
-			char* memory_block,
-			int memory_size);
-
-void* BufferingAllocator_getBlock(BufferingAllocator* allocator);
-
-int BufferingAllocator_releaseBlock(BufferingAllocator* allocator, void* block);
-
-void BufferingAllocator_sendBlocks(BufferingAllocator* allocator, void* start_block, void* end_block);
+/* funzione che invia una parte di memoria (invoca trigger) */
+/*
+void BufferedAllocator_sendBlocks(BufferingModeAllocator* allocator, void* start_block, void* end_block, const char* serial_path);
+//oppure fai una funzione che invia un bucket alla volta
+*/
