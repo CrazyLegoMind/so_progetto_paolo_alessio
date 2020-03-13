@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
   int it = 0;
   while(1){
     it++;
-    v = get_digital_value(pin);
+    v = ADC_single_conversion(pin);
     printf("%d value: %u\n", it, v);
     _delay_ms(100);
   }
@@ -80,8 +80,8 @@ void ADC_freerunnig_start(uint8_t pin){
   
   ADMUX = (1 << 6) | (pin & 0x07);
 
-  ADCSRA |= 1 << ADATE //imposto il bit di auto trigger
-  ADCSRB &= 0xF8 //azzero ADTS, bit 2:0 per selezionare la free running mode
+  ADCSRA |= 1 << ADATE; //imposto il bit di auto trigger
+  ADCSRB &= 0xF8; //azzero ADTS, bit 2:0 per selezionare la free running mode
   ADCSRA |= (1 << ADSC); // imposto il bit per iniziare la prima conversione
 
 
