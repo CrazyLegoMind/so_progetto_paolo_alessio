@@ -3,10 +3,12 @@ TODO list
 
 - S uart asincrona
 - S lettura adc
+- S generazione interrupt e handling del sampling rate
+
 - S/H buffered mode per l'uart
 - S/H continuos mode per l'uart
-- H comunicazione comandi da host
-- S generazione interrupt e handling del sampling rate
-- H scrittura file dalla uart (asincrono con i comandi?)
 - S/H controllo/generazione checksum
-- srutta pacchetti per la comunicazione
+- S/H srutta pacchetti per la comunicazione
+
+- H comunicazione comandi da host
+- H scrittura file dalla uart (asincrono con i comandi?)

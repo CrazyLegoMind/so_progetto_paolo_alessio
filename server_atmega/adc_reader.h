@@ -1,3 +1,5 @@
 #pragma once
 
-int get_digital_value(uint8_t pin);
+int ADC_single_conversion(uint8_t pin);
+void ADC_freerunning_start();
+void ADC_freerunning_stop();
