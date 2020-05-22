@@ -1,7 +1,7 @@
 TODO list
 
 
-- S uart asincrona
+- S uart asincrona -> usare codice professore (aggiunto alla cartella host) ma aggiungere la richiesta di frequenza di sampling da PC
 - S lettura adc
 - S generazione interrupt e handling del sampling rate
 

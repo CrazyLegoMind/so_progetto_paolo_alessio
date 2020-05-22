@@ -11,9 +11,3 @@ void* BufferedModeAllocator_getBlock(BufferingModeAllocator* allocator);
 
 /* funzione che elimina dall'allocatore il blocco di memoria specificato */
 int BufferedModeAllocator_releaseBlock(BufferingModeAllocator* allocator, void* block);
-
-/* funzione che invia una parte di memoria (invoca trigger) */
-/*
-void BufferedAllocator_sendBlocks(BufferingModeAllocator* allocator, void* start_block, void* end_block, const char* serial_path);
-//oppure fai una funzione che invia un bucket alla volta
-*/
