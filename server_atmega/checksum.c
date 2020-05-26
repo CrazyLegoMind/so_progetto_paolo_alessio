@@ -20,7 +20,7 @@ static uint32_t generate_checksum(char byte, char* seq) {
     memcpy(&ext_mem[1], seq, strlen(seq));
     int i;
     for(i = 0; i < MAX_BYTES; i++)
-        sum +=  ext_mem[i] * pow(2,i);
+        sum +=  (ext_mem[i] * pow(2,i));
     return (uint32_t)sum;
 }
 
@@ -99,8 +99,8 @@ uint32_t checksum_calc(char* a, char* b) {
     return ret_value;
 }
 
-//debug main
-/*
+
+/* debug main
 int main()
 {
     char a[MAX_BYTES-1],b[MAX_BYTES-1];
@@ -110,6 +110,8 @@ int main()
     scanf("%s",&a);
     printf("Enter second binary string\n");
     scanf("%s",&b);
-    checksum_calc(a,b);
+    printf("Calculating checksum... ");
+    uint32_t checksum = checksum_calc(a,b);
+    printf("%lu. Done.\n", checksum);
 }
 */

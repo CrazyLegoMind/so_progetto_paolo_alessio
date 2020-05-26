@@ -1,5 +1,5 @@
 #pragma once
-#include "packets.h"
+#include "defs.h"
 
 /* AA:  metodi per la gestione del buffered mode */
 

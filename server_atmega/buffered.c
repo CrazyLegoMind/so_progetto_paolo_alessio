@@ -1,10 +1,12 @@
 #include <unistd.h>
 #include <fnctl.h>
 #include "buffered.h"
-#include "packets.h"
+#include "defs.h"
 
-//static const int NullIdx = -1; 
-//static const int DetachedIdx=-2;
+//costante che comunica che si è arrivati alla fine del blocco di memoria disponibile
+static const int NullIdx = -1; 
+//costante che comunica che il blocco è stato rilasciato
+static const int DetachedIdx = -2;
 
 int BufferedModeAllocator_init(BufferedModeAllocator* bma, int pkg_size, int pkg_list_size, char* memory, int memory_size) {
   //controllo memoria
@@ -19,13 +21,13 @@ int BufferedModeAllocator_init(BufferedModeAllocator* bma, int pkg_size, int pkg
   bma->pkg_list = (int*)(memory + pkg_size*pkg_list_size); 
 
   //popolazione dei blocchi: inizializza a 0 (clear bits)
-  for (int i=0; i < bma->pkg_list_size-1; ++i){
+  for (int i=0; i < bma->pkg_list_size-1; ++i)
     bma->pkg_list[i] = 0;
-  }
-  /*l'ultimo indice segnala la fine del buffer
-  bma->free_list[ba->size] = NullIdx;
+
+  
+  bma->pkg_list[ba->size] = NullIdx;
   bma->first_idx = 0;
-  */
+
   return 1;
 }
 
