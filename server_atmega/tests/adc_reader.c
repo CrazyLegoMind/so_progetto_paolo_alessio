@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <avr/io.h>
-#include "../../avr_common/uart.h"
+#include "../avr_common/uart.h"
 #include "adc_reader.h"
 
 
@@ -88,7 +88,7 @@ void ADC_freerunnig_start(uint8_t pin){
   //NB: la lettura dei valori andra fatta durante le ISR degli interrupt di conversion complete
 }
 
-void ADC_freerunnig_stop(){
+void ADC_freerunnig_stop(int arg){
   ADCSRA &= ~(1 << ADEN) & ~(1<<ADATE); //azzero il bit che abilita l'ADC e quello che abilita l'auto trigger
 }
 
