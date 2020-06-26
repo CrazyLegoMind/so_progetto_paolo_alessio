@@ -40,7 +40,3 @@ HEADERS=../../avr_common/uart.h
 # !!!!!!!!!!!!!!!! MODIFY HERE !!!!!!!!!!!!!!!! 
 
 include ../../avr_common/avr.mk
-
-
-
-

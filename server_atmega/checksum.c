@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <math.h>
+#include <stdint.h>
+#include <stdio.h>
 
 //AA: funzione di generazione del checksum
 
@@ -11,107 +12,93 @@
 
 #define MAX_BYTES 5
 
-char ext_mem[MAX_BYTES];
+char ext_mem[MAX_BYTES+1];
 
-static uint32_t generate_checksum(char byte, char* seq) {
-    double sum = 0;
-    memset(ext_mem, 0, MAX_BYTES);
-    ext_mem[0] = byte;
-    memcpy(&ext_mem[1], seq, strlen(seq));
-    int i;
-    for(i = 0; i < MAX_BYTES; i++)
-        sum +=  (ext_mem[i] * pow(2,i));
-    return (uint32_t)sum;
-}
 
-uint32_t checksum_calc(char* a, char* b) {
-    int length;
-    uint32_t ret_value = 0;
-    if(strlen(a)==strlen(b)){
-		length = strlen(a);
-		char carry='0';
-        
-        int i;
-		for(i=length-1;i>=0;i--) {
-			if(a[i]=='0' && b[i]=='0' && carry=='0') {
-                sum[i]='0';
-                carry='0';
-            }
-            else if(a[i]=='0' && b[i]=='0' && carry=='1') {
-                sum[i]='1';
-                carry='0';
- 
-            }
-            else if(a[i]=='0' && b[i]=='1' && carry=='0') {
-                sum[i]='1';
-                carry='0';
- 
-            }
-            else if(a[i]=='0' && b[i]=='1' && carry=='1') {
-                sum[i]='0';
-                carry='1';
- 
-            }
-            else if(a[i]=='1' && b[i]=='0' && carry=='0') {
-                sum[i]='1';
-                carry='0';
- 
-            }
-            else if(a[i]=='1' && b[i]=='0' && carry=='1') {
-                sum[i]='0';
-                carry='1';
- 
-            }
-            else if(a[i]=='1' && b[i]=='1' && carry=='0') {
-                sum[i]='0';
-                carry='1';
- 
-            }
-            else if(a[i]=='1' && b[i]=='1' && carry=='1') {
-                sum[i]='1';
-                carry='1';
- 
-            }
-            else
-                break;
-        }
-        
-		printf("\nSum=%c%s",carry,sum);
-		
-		for(i=0;i<length;i++) {
-            if(sum[i]=='0')
-                complement[i]='1';
-            else
-                complement[i]='0';
-        }
-        
-        if(carry=='1')
-            carry='0';
-        else
-            carry='1';
-        
-		printf("\nChecksum=%c%s",carry,complement);
-        ret_value = generate_checksum(carry, complement);
+void checksum_calc(char* a, char* b, char* checksum) {
+    if(strlen(a) != strlen(b)) {
+		printf("\nWrong input strings\n");
+        return;
 	}
-	else {
-		printf("\nWrong input strings");
-	}
-    return ret_value;
-}
-
-
-/* debug main
-int main()
-{
-    char a[MAX_BYTES-1],b[MAX_BYTES-1];
-    char sum[MAX_BYTES-1],complement[MAX_BYTES];
     
-	printf("Enter first binary string\n");
-    scanf("%s",&a);
-    printf("Enter second binary string\n");
-    scanf("%s",&b);
-    printf("Calculating checksum... ");
-    uint32_t checksum = checksum_calc(a,b);
-    printf("%lu. Done.\n", checksum);
+    int length = strlen(a);
+    char carry='0';
+    char sum[MAX_BYTES], complement[MAX_BYTES];
+    int i;
+    for(i=length-1;i>=0;i--) {
+        if(a[i]=='0' && b[i]=='0' && carry=='0') {
+            sum[i]='0';
+            carry='0';
+        }
+        else if(a[i]=='0' && b[i]=='0' && carry=='1') {
+            sum[i]='1';
+            carry='0';
+
+        }
+        else if(a[i]=='0' && b[i]=='1' && carry=='0') {
+            sum[i]='1';
+            carry='0';
+
+        }
+        else if(a[i]=='0' && b[i]=='1' && carry=='1') {
+            sum[i]='0';
+            carry='1';
+
+        }
+        else if(a[i]=='1' && b[i]=='0' && carry=='0') {
+            sum[i]='1';
+            carry='0';
+
+        }
+        else if(a[i]=='1' && b[i]=='0' && carry=='1') {
+            sum[i]='0';
+            carry='1';
+
+        }
+        else if(a[i]=='1' && b[i]=='1' && carry=='0') {
+            sum[i]='0';
+            carry='1';
+
+        }
+        else if(a[i]=='1' && b[i]=='1' && carry=='1') {
+            sum[i]='1';
+            carry='1';
+
+        }
+        else
+            break;
+    }
+    
+    //printf("\nSum=%c%s",carry,sum);
+    
+    for(i=0;i<length;i++) {
+        if(sum[i]=='0')
+            complement[i]='1';
+        else
+            complement[i]='0';
+    }
+    
+    if(carry=='1')
+        carry='0';
+    else
+        carry='1';
+    
+    //printf("\nChecksum=%c%s\n",carry,complement);
+    checksum[0] = carry;
+    memcpy(&checksum[1], complement, MAX_BYTES);
 }
-*/
+
+
+/*AA debug main
+int main() {
+    char a[MAX_BYTES],b[MAX_BYTES];
+    char checksum[MAX_BYTES+1];
+	printf("Enter first binary string (max %d chars): ", MAX_BYTES-1);
+    scanf("%s",&a[0]);
+    printf("Enter second binary string (max %d chars): ", MAX_BYTES-1);
+    scanf("%s",&b[0]);
+    printf("Calculating checksum... ");
+    checksum_calc(a,b, &checksum[0]);
+    printf("\nChecksum = %s\n", checksum);
+    return 0;
+} */
