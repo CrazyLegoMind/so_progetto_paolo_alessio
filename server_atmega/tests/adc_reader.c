@@ -58,7 +58,7 @@ int ADC_single_conversion(uint8_t pin){
   low  = ADCL;
   high = ADCH;
 
-  // combine the two bytes
+  // unisco i bit per creare il numero a precisione 10bit
   return (high << 8) | low;
 }
 
