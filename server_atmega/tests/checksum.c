@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -89,11 +89,12 @@ void checksum_calc(char* a, char* b, char* checksum) {
 }
 
 
-/*AA debug main
+///*AA debug main
+
 int main() {
     char a[MAX_BYTES],b[MAX_BYTES];
     char checksum[MAX_BYTES+1];
-	printf("Enter first binary string (max %d chars): ", MAX_BYTES-1);
+    printf("Enter first binary string (max %d chars): ", MAX_BYTES-1);
     scanf("%s",&a[0]);
     printf("Enter second binary string (max %d chars): ", MAX_BYTES-1);
     scanf("%s",&b[0]);
@@ -101,4 +102,5 @@ int main() {
     checksum_calc(a,b, &checksum[0]);
     printf("\nChecksum = %s\n", checksum);
     return 0;
-} */
+}
+//*/

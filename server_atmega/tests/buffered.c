@@ -1,6 +1,5 @@
 #include <stdlib.h>
-
-#include <unistd.h>
+//#include <unistd.h>
 #include <stdio.h>
 #include <stdint.h>
 #include "buffered.h"
@@ -81,9 +80,9 @@ int BufferedModeAllocator_releaseBlock(BufferedModeAllocator* bma, void* block_)
 }
 
 
-/* AA debug main 
-static const int max_pkgs = 10;
-static const int buf_size = max_pkgs*(PKG_SIZE + sizeof(int));
+///* AA debug main 
+#define max_pkgs 10
+const int buf_size = max_pkgs*(PKG_SIZE + sizeof(int));
 BufferedModeAllocator all;
 
 int main(int argc, char** argv) {
@@ -115,4 +114,5 @@ int main(int argc, char** argv) {
     }
     printf("Test eseguito correttamente.\n");
     return EXIT_SUCCESS;  
-}*/
+}
+//*/
