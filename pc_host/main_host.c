@@ -1,29 +1,34 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../server_atmega/avr_common/uart.h"
-#include "init_pkg.h"
+#include <stdint.h>
+#include <fcntl.h>
+#include "libraries/serial.h"
+#include "../common_lib/defs.h"
 
-#define DFLT_BAUD 155200
+//AA default baudrate
+#define BAUD 115200
+//AA default connection port (check using dmesg)
+#define DEV_PATH "/dev/ttyACM0"
 
-typedef struct InitPkg InitPkg;
 
 int main (int* argc, char** argv) {
 	
-    InitPkg pkg;
+    InitPkg conf_pkg;
     uint8_t freq, mode = 2, channels = 0;
     printf("Welcome to oscilloscope project, powered by Alessio & Paolo\n");
 
-    if(argc <= 4) {
+    if(argc <= 3) {
         //insert list of settings
         printf("Give your sampling frequency (in Hz): ");
         scanf("%hhu",&freq);
         printf("Which mode you want to operate? (0 for continuous sampling, 1 for buffered mode): ");
         scanf("%hhu", &mode);
-    } else if(argc == 5) {
+        printf("How many channels do you want to use? (max 8) ");
+        scanf("%hhu", &channels);
+    } else if(argc == 4) {
         freq = argv[1];
         mode = argv[2];
         channels = argv[3];
-        baud = argv[4];
     }
 	
     //check error for frequency
@@ -38,23 +43,42 @@ int main (int* argc, char** argv) {
     
     //check error for channels
     while(channels <= 0 || channels => 9) {
-        printf("Too many channels, try again\n");
+        printf("Wrong number of channels, try again\n");
         printf("How many channels do you want to use? (max 8): ");
         scanf("%hhu", &channels);
     }
 
     //start
-    pkg.sampling_freq = freq;
-    pkg.mode = mode;
-    pkg.channels = channels;
-    
-    //send to server
-    usart_init(DFLT_BAUD);
-    usart_putchar(pkg.sampling_freq);
-    usart_putchar(pkg.mode);
-    usart_putchar(pkg.channels);
+    config_pkg.sampling_freq = freq;
+    config_pkg.mode = mode;
+    config_pkg.channels = channels;
+    //setting up serial communication
+    int fd = serial_fd(DEV_PATH);
+    if(fd < 0) 
+    	return EXIT_FAILURE;
+    if(uart_set(fd, BAUD, 'n') == -1)
+    	return EXIT_FAILURE;
+    //first of all send primary info to server (atmega)
+    if(uart_write(fd, config_pkg, sizeof(InitPkg)) == -1) {
+    	exit(EXIT_FAILURE);
+    	//return EXIT_FAILURE;
+    }
     
     //waiting for info from server
-    
+    DataPkg data_pkg;
+    while(/* non arriva un cmd che comunica che il trigger è stato attivato da server*/) {
+    	if(uart_read(fd, &data_pkg, sizeof(DataPkg)) == -1)
+    		return EXIT_FAILURE;
+    	//save data (pin & value?) onto a file
+    	FILE* file_fd = fopen("values.txt", "w");
+    	if(!file_fd) {
+    		printf("Error while creating the file.\n");
+    		return EXIT_FAILURE;
+    	}
+    	fprintf(file_fd, "%hhu ", data_pkg.mask_pin);
+    	fprintf(file_fd, "%hhu\n", data_pkg.data);
+    }
+    //end of operations
+    fclose(file_fd);
     return EXIT_SUCCESS;
 }

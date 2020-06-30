@@ -1,19 +1,17 @@
 #include <termios.h>
 #include <stdlib.h>
 #include <stdint.h>
-
-
+#include <fcntl.h>
+#include "serial.h"
+#include "../common_lib/defs.h"
 
 /* 
 AA: funzione che imposta la comunicazione seriale UART
 -fd: file descriptor della seriale
 -baude: bauderate da impostare (4800, 9600. 19200, 38400, 115200)
--bits: da quanti bit è formata l'informazione (5,6,7,8)
--parity: impostazione controllo di parità (n-N, o-O, e-E)
--stop: numero di spot bits desiderati (1,2)
+-parity: impostazione controllo di parità (n-N default, o-O, e-E)
 */
-int uart_set(int fd, int baude, int bits, char parity, int stop)
-{
+int uart_set(int fd, const unsigned int baude, uint8_t parity) {
     struct termios options;
 
     //AA: impostazione iniziale del riferimento termios basato su fd
@@ -54,6 +52,8 @@ int uart_set(int fd, int baude, int bits, char parity, int stop)
 
 
     // AA qui si imposta la grandezza dei caratteri durante la trasmissione
+    ///default 8 bit
+    /*
     switch(bits) {
         case 5:
             options.c_cflag &= ~CSIZE;
@@ -67,14 +67,15 @@ int uart_set(int fd, int baude, int bits, char parity, int stop)
             options.c_cflag &= ~CSIZE;
             options.c_cflag |= CS7;
             break;
-        case 8:
-            options.c_cflag &= ~CSIZE;
-            options.c_cflag |= CS8;
+        case 8: */
+    options.c_cflag &= ~CSIZE;
+    options.c_cflag |= CS8;
+    /*
             break;
         default:
             fprintf(stderr,"Unkown bits!\n");
             return -1;
-    }
+    } */
 
     //AA qui si imposta il controllo di parità sui dati (n-N: normal, e-E: even, o-O: odd)
     switch(parity) {
@@ -102,7 +103,7 @@ int uart_set(int fd, int baude, int bits, char parity, int stop)
             return -1;
     }
 
-    //impostazione del numero di stop bits (1 o 2)
+    /*impostazione del numero di stop bits (1 o 2)
     switch(stop)
     {
         case 1:
@@ -114,7 +115,7 @@ int uart_set(int fd, int baude, int bits, char parity, int stop)
         default:
             fprintf(stderr,"Unkown stop!\n");
             return -1;
-    }
+    } */
 
     //AA: impostazioni output
     options.c_oflag &= ~OPOST;
@@ -122,7 +123,7 @@ int uart_set(int fd, int baude, int bits, char parity, int stop)
     //impostazioni outoput in non-canonical mode (quando ICANON non è abilitato)
     //in questo caso ogni lettura tramite syscall read è bloccata fino a quando 1 byte è disponibile, e ritorna il numero di byte richiesti (fonte: linux man)
     options.c_cc[VTIME] = 0;
-    options.c_cc[VMIN] = 1;
+    options.c_cc[VMIN] = 1;	//0.1 seconds timeout
 
     tcflush(fd,TCIFLUSH);
     
@@ -142,4 +143,68 @@ int uart_set(int fd, int baude, int bits, char parity, int stop)
 
     return 0;
 
+}
+
+/*AA: funzione che restituisce il file descriptor corrispondente al server
+-path: percorso della seriale (in genere /dev/ttyACM0)
+*/
+int serial_fd(const uint8_t* path) {
+	uint32_t fd = open(path, O_RDWR | O_SYNC | O_NOCTTY);
+	if(fd < 0) {
+		fprintf(stderr, "Error opening serial device %s\n", path);
+		return -1;
+	}
+	return fd;
+}
+
+/*AA: funzione ausiliaria che ricopia i dati contenuti in un buffer e genera un pacchetto di informazioni
+-buf: buffer da cui prendere le informazioni
+-bufsize: grandezza buffer
+*/
+static DataPkg* gen_pkg(uint8_t* buf, size_t bufsize) {
+	DataPkg* pkg = (DataPkg*)malloc(sizeof(DataPkg));
+	memcpy(pkg, buf, bufsize);
+	return pkg;
+}
+
+/*AA: funzione di lettura di 8 bit alla volta dal server
+-fd: file descriptor generato da uart_fd
+-buf: riferimento all'oggetto che si vuole leggere
+-size: quanto si vuole leggere dal server
+*/ 
+int uart_read(int fd, void* buf, size_t size) {
+	uint8_t* locbuf = malloc(size);
+	uint8_t aux;
+	int i;
+	for(i=0; i < size; i++) {
+		if(read(fd, &aux, sizeof(uint8_t)) {
+			fprintf(stderr, "Error while reading byte %d", i);
+			free(locbuf);	
+			return -1;
+		}
+		*(locbuf+i) = aux;
+	}
+	//printf("Read completed.\n");
+	//save local package 
+	buf = gen_pkg(locbuf, size, buf);
+	free(locbuf);
+	return 1;
+}
+
+/*AA: funzione di scrittura dati verso il server */ 
+int uart_write(int fd, void* buf, size_t size) {
+	uint8_t* b = malloc(size);
+	memcpy(b, buf, size);
+	int i;
+	for(i=0; i < size; i++) {
+		//send data to server 1 byte per time
+		if(write(fd, b+i, sizeof(uint8_t)) == -1) {
+			fprintf(stderr,"Error while writing byte %d\n",i);
+			free(b);	
+			return -1;
+		}
+	} 
+	//printf("Write completed.\n");
+	free(b);
+	return 1;
 }
