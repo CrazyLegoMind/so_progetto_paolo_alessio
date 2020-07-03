@@ -23,3 +23,10 @@ typedef struct _buffered_mode_allocator {
   int first_pkg;                      // indice del primo blocco disponibile per un pacchetto
 } BufferedModeAllocator;
 
+//AA: struttura che setta il server secondo i valori forniti dall'utente
+typedef struct _init_pkg {
+	uint8_t sampling_freq;
+	uint8_t mode;
+	uint8_t channels;
+} InitPkg;
+
