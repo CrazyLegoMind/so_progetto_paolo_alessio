@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include "serial.h"
-#include "../common_lib/defs.h"
+#include "../../common_lib/defs.h"
 
 /* 
 AA: funzione che imposta la comunicazione seriale UART
@@ -43,7 +43,7 @@ int uart_set(int fd, const unsigned int baude, uint8_t parity) {
             cfsetospeed(&options,B115200);
             break;
         default:
-            fprintf(stderr,"Unkown baude!\n");
+            printf("Unkown baude!\n");
             return -1;
     }
 
@@ -52,7 +52,7 @@ int uart_set(int fd, const unsigned int baude, uint8_t parity) {
 
 
     // AA qui si imposta la grandezza dei caratteri durante la trasmissione
-    ///default 8 bit
+    // default 8 bit
     /*
     switch(bits) {
         case 5:
@@ -148,7 +148,7 @@ int uart_set(int fd, const unsigned int baude, uint8_t parity) {
 /*AA: funzione che restituisce il file descriptor corrispondente al server
 -path: percorso della seriale (in genere /dev/ttyACM0)
 */
-int serial_fd(const uint8_t* path) {
+int serial_open(const uint8_t* path) {
 	uint32_t fd = open(path, O_RDWR | O_SYNC | O_NOCTTY);
 	if(fd < 0) {
 		fprintf(stderr, "Error opening serial device %s\n", path);
@@ -186,7 +186,7 @@ int uart_read(int fd, void* buf, size_t size) {
 	}
 	//printf("Read completed.\n");
 	//save local package 
-	buf = gen_pkg(locbuf, size, buf);
+    buf = gen_pkg(locbuf, size, buf);
 	free(locbuf);
 	return 1;
 }

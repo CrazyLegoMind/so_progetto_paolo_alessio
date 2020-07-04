@@ -96,8 +96,10 @@ int main() {
     char checksum[MAX_BYTES+1];
     printf("Enter first binary string (max %d chars): ", MAX_BYTES-1);
     scanf("%s",&a[0]);
+    a[MAX_BYTES] = '/0';
     printf("Enter second binary string (max %d chars): ", MAX_BYTES-1);
     scanf("%s",&b[0]);
+    b[MAX_BYTES] = '/0';
     printf("Calculating checksum... ");
     checksum_calc(a,b, &checksum[0]);
     printf("\nChecksum = %s\n", checksum);

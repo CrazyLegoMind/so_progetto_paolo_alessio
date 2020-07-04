@@ -1,15 +1,15 @@
 #pragma once
 
-#define PKG_SIZE 3584
+#define PKG_SIZE 3328
 
-//AA: struttura pacchetto (14 bytes = 3584 bits)
+//AA: struttura pacchetto (13 bytes = 3328 bits)
 typedef struct _data_pkg {
   uint32_t checksum;                  // generato dal server
   //unsigned char* checksum; ??
   uint16_t mask_pin;                  // pin da dove si legge il valore
   uint16_t data;                      // valore misurato
   uint8_t data_rate;                  // frequenza di lettura
-  uint8_t cmd;                        // codice per l'attivazione di una routine da ISR
+  //uint8_t cmd;                      // codice per l'attivazione di una routine da ISR
   int timestamp;                      // intero progressivo di mappatura dei pacchetti nell'allocatore
 } DataPkg;
 
@@ -26,7 +26,8 @@ typedef struct _buffered_mode_allocator {
 //AA: struttura che setta il server secondo i valori forniti dall'utente
 typedef struct _init_pkg {
 	uint8_t sampling_freq;
-	uint8_t mode;
 	uint8_t channels;
+  uint8_t mode;
+	int trigger;
 } InitPkg;
 
