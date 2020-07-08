@@ -1,14 +1,14 @@
 TODO list
 
 
-- S uart asincrona -> usare codice professore (aggiunto alla cartella host) ma aggiungere la richiesta di frequenza di sampling da PC
-- S lettura adc
+- S uart asincrona -> usare codice professore (aggiunto alla cartella host) ma aggiungere la richiesta di frequenza di sampling da PC (fatto)
+- S lettura adc (fattp)
 - S generazione interrupt e handling del sampling rate
 
-- S/H buffered mode per l'uart
-- S/H continuos mode per l'uart
-- S/H controllo/generazione checksum
-- S/H srutta pacchetti per la comunicazione
+- S/H buffered mode per l'uart (fatto)
+- S/H continuos mode per l'uart (main_host legge in entrambi in casi) 
+- S/H controllo/generazione checksum (generazione ok)
+- S/H srutta pacchetti per la comunicazione (fatto)
 
 - H comunicazione comandi da host
 - H scrittura file dalla uart (asincrono con i comandi?)

@@ -32,7 +32,7 @@ BINS=adc_reader.elf buffered.elf checksum.elf
 OBJS= ../avr_common/uart.o 
 
 # put here the additional header files needed for compilation
-HEADERS= ../avr_common/uart.h  adc_reader.h buffered.h checksum.h
+HEADERS= ../avr_common/uart.h  ../libraries/adc_reader.h ../libraries/buffered.h ../../commmon_lib/checksum.h
 
 
 # the file below contains the actual rules

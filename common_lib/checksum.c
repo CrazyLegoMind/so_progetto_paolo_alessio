@@ -1,16 +1,15 @@
 #include <stdlib.h>
-//#include <unistd.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
 
-//AA: funzione di generazione del checksum
+//AA: funzione di generazione e confronto del checksum
 
 // In this method a checksum is calculated based on the given binary strings which is sent with the data as redundant bits. 
 // This data + checksum is received at receiver end and checksum is calculated again,
 // if any error occurs, the function returns 0, the calculated value otherwise.
 
-#define MAX_BYTES 5
+#define MAX_BYTES sizeof(uint32_t)
 
 char ext_mem[MAX_BYTES+1];
 
@@ -89,7 +88,7 @@ void checksum_calc(char* a, char* b, char* checksum) {
 }
 
 
-///*AA debug main
+/*AA debug main
 
 int main() {
     char a[MAX_BYTES],b[MAX_BYTES];
@@ -103,4 +102,27 @@ int main() {
     printf("\nChecksum = %s\n", checksum);
     return 0;
 }
-//*/
+*/
+
+/*AA: parity bit check algorithm (alternativa)
+unsigned checksum_calc(void *buffer, size_t len, unsigned int seed) {
+      unsigned char *buf = (unsigned char *)buffer;
+      size_t i;
+
+      for (i = 0; i < len; ++i)
+            seed += (unsigned int)(*buf++);
+      return seed;
+}*/
+
+unsigned int checksum_cmp(uint32_t* c1, uint32_t* c2) {
+    //AA: controllo bit a bit
+    //1: successfull, 0: error detected
+    if(strlen(c1) != strlen(c2))
+        return 0;
+    int i=0;
+    while(c1 != NULL || c2 != NULL) {
+        if(*c1++ != *c2++)
+            return 0;
+    }
+    return 1;
+} 

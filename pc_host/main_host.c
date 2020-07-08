@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include "libraries/serial.h"
 #include "../common_lib/defs.h"
+#include "../common_lib/checksum.h"
 
 //AA default baudrate
 #define BAUD 115200
@@ -69,6 +70,9 @@ int main (int* argc, char** argv) {
     while(/* non arriva un cmd che comunica che il trigger è stato attivato da server*/) {
     	if(uart_read(fd, &data_pkg, sizeof(DataPkg)) == -1)
     		return EXIT_FAILURE;
+        //controllo checksum (primi 32 bit del pacchetto)
+        if(!checksum_cmp(checksum_calc(data_pkg, sizeof(data_pkg),0), data_pkg.checksum))
+            printf("Pacchetto scartato");           //impedisci di scrivere su file
     	//save data (pin & value?) onto a file
     	FILE* file_fd = fopen("values.txt", "w");
     	if(!file_fd) {
