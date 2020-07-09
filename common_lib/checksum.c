@@ -13,7 +13,7 @@
 
 char ext_mem[MAX_BYTES+1];
 
-
+/*
 void checksum_calc(char* a, char* b, char* checksum) {
     if(strlen(a) != strlen(b)) {
 		printf("\nWrong input strings\n");
@@ -86,6 +86,7 @@ void checksum_calc(char* a, char* b, char* checksum) {
     checksum[0] = carry;
     memcpy(&checksum[1], complement, MAX_BYTES);
 }
+*/
 
 
 /*AA debug main
@@ -106,19 +107,19 @@ int main() {
 }
 */
 
-/*AA: parity bit check algorithm (alternativa)
-unsigned checksum_calc(void *buffer, size_t len, unsigned int seed) {
-      unsigned char *buf = (unsigned char *)buffer;
-      size_t i;
+//AA: LRC (longitudinal redundancy check)
+uint32_t checksum_calc(void *buffer, size_t len) {
+    uint32_t seed = 0;
+    unsigned char *buf = (unsigned char *)buffer;
+    int i;
+    for (i = 0; i < len; ++i)
+        seed += (unsigned int)(*buf++);
+    return seed;
+}
 
-      for (i = 0; i < len; ++i)
-            seed += (unsigned int)(*buf++);
-      return seed;
-}*/
-
-unsigned int checksum_cmp(uint32_t* c1, uint32_t* c2) {
-    //AA: controllo bit a bit
-    //1: successfull, 0: error detected
+//AA: controllo bit a bit
+//1: successo, 0: errore
+int checksum_cmp(uint32_t* c1, uint32_t* c2) {
     if(strlen(c1) != strlen(c2))
         return 0;
     int i=0;

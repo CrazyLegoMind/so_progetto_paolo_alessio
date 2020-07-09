@@ -1,5 +1,6 @@
 #include <termios.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <fcntl.h>
 #include "serial.h"
@@ -68,8 +69,8 @@ int uart_set(int fd, const unsigned int baude, uint8_t parity) {
             options.c_cflag |= CS7;
             break;
         case 8: */
-    options.c_cflag &= ~CSIZE;
-    options.c_cflag |= CS8;
+            options.c_cflag &= ~CSIZE;
+            options.c_cflag |= CS8;
     /*
             break;
         default:

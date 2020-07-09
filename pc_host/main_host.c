@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <fcntl.h>
+#include <string.h>
 #include "libraries/serial.h"
 #include "../common_lib/defs.h"
 #include "../common_lib/checksum.h"
@@ -74,22 +75,29 @@ int main (int* argc, char** argv) {
     
     //waiting for info from server
     DataPkg data_pkg;
-    while(/* non arriva un cmd che comunica che il trigger è stato attivato da server*/) {
+    uint8_t loc_cmd = 0;
+    FILE* file_fd = fopen("samples.txt", "w");
+    while(loc_cmd == 0) {
+        memset(&data_pkg, 0, sizeof(DataPkg));
     	if(uart_read(fd, &data_pkg, sizeof(DataPkg)) == -1)
     		return EXIT_FAILURE;
         //controllo checksum (primi 32 bit del pacchetto)
-        if(!checksum_cmp(checksum_calc(data_pkg, sizeof(data_pkg),0), data_pkg.checksum))
-            printf("Pacchetto scartato");           //impedisci di scrivere su file
-    	//save data (pin & value?) onto a file
-    	FILE* file_fd = fopen("samples.plt", "w");
-    	if(!file_fd) {
-    		printf("Error while creating the file.\n");
-    		return EXIT_FAILURE;
-    	}
-    	fprintf(file_fd, "%hhu ", data_pkg.mask_pin);
-    	fprintf(file_fd, "%hhu\n", data_pkg.data);
+        if(!checksum_cmp(checksum_calc(&data_pkg, sizeof(data_pkg)), &data_pkg.checksum))
+            printf("Pacchetto scartato");
+        else {
+            //printf("Checksum OK\n");
+            //save data (pin & value?) onto a file
+            if(!file_fd) {
+                printf("Error while creating the file.\n");
+                return EXIT_FAILURE;
+            }
+            fprintf(file_fd, "%hhu ", data_pkg.mask_pin);
+            fprintf(file_fd, "%hhu\n", data_pkg.data);
+        }
+        loc_cmd = data_pkg.cmd;
     }
-    //end of operations
+
+    //printf("END OF OPERATIONS.\n");
     fclose(file_fd);
     return EXIT_SUCCESS;
 }
