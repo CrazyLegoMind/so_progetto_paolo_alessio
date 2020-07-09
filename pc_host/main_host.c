@@ -14,8 +14,9 @@
 
 int main (int* argc, char** argv) {
 	
-    InitPkg conf_pkg;
+    InitPkg config_pkg;
     uint8_t freq, mode = 2, channels = 0;
+    int trigger = -1;
     printf("Welcome to oscilloscope project, powered by Alessio & Paolo\n");
 
     if(argc <= 3) {
@@ -41,6 +42,11 @@ int main (int* argc, char** argv) {
         printf("Which mode you want to operate? (0 for continuous sampling, 1 for buffered mode): ");
         scanf("%hhu", &mode);
     }
+    //if buffered mode is on, select the trigger
+    if(mode) {
+        printf("You selected buffered mode, so do select trigger value: ");
+        scanf("%d", &trigger);
+    }
     
     //check error for channels
     while(channels <= 0 || channels => 9) {
@@ -51,16 +57,17 @@ int main (int* argc, char** argv) {
 
     //start
     config_pkg.sampling_freq = freq;
-    config_pkg.mode = mode;
     config_pkg.channels = channels;
+    config_pkg.mode = mode;
+    config_pkg.trigger = trigger;
     //setting up serial communication
-    int fd = serial_fd(DEV_PATH);
+    int fd = serial_open(DEV_PATH);
     if(fd < 0) 
     	return EXIT_FAILURE;
     if(uart_set(fd, BAUD, 'n') == -1)
     	return EXIT_FAILURE;
     //first of all send primary info to server (atmega)
-    if(uart_write(fd, config_pkg, sizeof(InitPkg)) == -1) {
+    if(uart_write(fd, &config_pkg, sizeof(InitPkg)) == -1) {
     	exit(EXIT_FAILURE);
     	//return EXIT_FAILURE;
     }
@@ -74,7 +81,7 @@ int main (int* argc, char** argv) {
         if(!checksum_cmp(checksum_calc(data_pkg, sizeof(data_pkg),0), data_pkg.checksum))
             printf("Pacchetto scartato");           //impedisci di scrivere su file
     	//save data (pin & value?) onto a file
-    	FILE* file_fd = fopen("values.txt", "w");
+    	FILE* file_fd = fopen("samples.plt", "w");
     	if(!file_fd) {
     		printf("Error while creating the file.\n");
     		return EXIT_FAILURE;
