@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <fcntl.h>
+#include <string.h>
 #include "serial.h"
 #include "../../common_lib/defs.h"
 
@@ -12,7 +13,7 @@ AA: funzione che imposta la comunicazione seriale UART
 -baude: bauderate da impostare (4800, 9600. 19200, 38400, 115200)
 -parity: impostazione controllo di parità (n-N default, o-O, e-E)
 */
-int uart_set(int fd, const unsigned int baude, uint8_t parity) {
+int serial_set(int fd, const unsigned int baude, uint8_t parity) {
     struct termios options;
 
     //AA: impostazione iniziale del riferimento termios basato su fd
@@ -168,17 +169,51 @@ static DataPkg* gen_pkg(uint8_t* buf, size_t bufsize) {
 	return pkg;
 }
 
+static char* select_header(size_t dim) {
+    return (dim == 11 ? DATA_HEADER : INIT_HEADER);
+}
+
+/*AA: funzione per allineamento dati riicevuti dalla seriale
+-src: puntatore ad area da esaminare
+-dest: puntatore ad area da restituire
+-size: dimensione memoria
+*/
+static int serial_align_data(uint8_t* src, uint8_t* dest, size_t size) {
+    uint8_t* tmp = malloc(size*2);
+    memcpy(tmp, src, size);
+    memcpy(tmp+size, src, size);
+    int i,c;
+    char* header = select_header(size);
+    for(i=0; i < size; i++) {
+        //trova posizione dell'header
+        c = memcmp(tmp+i, header, HEADER_SIZE);
+        if(!c) break;
+    }
+
+    if(i==size)
+        return -1;
+    i += HEADER_SIZE;
+    for(int j=0; j < size - HEADER_SIZE; j++) { 
+        i = i%size;
+        *(dest+j) = *(src+i);
+        i++;
+    }
+    free(tmp);
+    return 1;
+}
+
 /*AA: funzione di lettura di 8 bit alla volta dal server
 -fd: file descriptor generato da uart_fd
 -buf: riferimento all'oggetto che si vuole leggere
 -size: quanto si vuole leggere dal server
 */ 
-int uart_read(int fd, void* buf, size_t size) {
+int serial_read(int fd, void* buf, size_t size) {
+    size += HEADER_SIZE;
 	uint8_t* locbuf = malloc(size);
 	uint8_t aux;
 	int i;
 	for(i=0; i < size; i++) {
-		if(read(fd, &aux, sizeof(uint8_t)) {
+		if(read(fd, &aux, sizeof(uint8_t)) == -1) {
 			fprintf(stderr, "Error while reading byte %d", i);
 			free(locbuf);	
 			return -1;
@@ -186,6 +221,11 @@ int uart_read(int fd, void* buf, size_t size) {
 		*(locbuf+i) = aux;
 	}
 	//printf("Read completed.\n");
+    //align data
+    if(serial_align_data(locbuf,buf,size) == -1) {
+        printf("Error while aligning data!\n");
+        return -1;
+    }
 	//save local package 
     buf = gen_pkg(locbuf, size, buf);
 	free(locbuf);
@@ -193,9 +233,11 @@ int uart_read(int fd, void* buf, size_t size) {
 }
 
 /*AA: funzione di scrittura dati verso il server */ 
-int uart_write(int fd, void* buf, size_t size) {
-	uint8_t* b = malloc(size);
-	memcpy(b, buf, size);
+int serial_write(int fd, void* buf, size_t size) {
+	uint8_t* b = malloc(size + HEADER_SIZE);
+    char* header = select_header(size);
+    memcpy(b, header, HEADER_SIZE);
+	memcpy(b+HEADER_SIZE, buf, size);
 	int i;
 	for(i=0; i < size; i++) {
 		//send data to server 1 byte per time

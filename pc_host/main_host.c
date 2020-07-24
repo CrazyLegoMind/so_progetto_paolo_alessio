@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <string.h>
+#include <unistd.h>
 #include "libraries/serial.h"
 #include "../common_lib/defs.h"
 #include "../common_lib/checksum.h"
@@ -16,11 +17,11 @@
 int main (int* argc, char** argv) {
 	
     InitPkg config_pkg;
-    uint8_t freq, mode = 2, channels = 0;
+    uint8_t freq, mode = 2, channels = 0, seconds = -1;
     int trigger = -1;
     printf("Welcome to oscilloscope project, powered by Alessio & Paolo\n");
 
-    if(argc <= 3) {
+    if(argc <= 4) {
         //insert list of settings
         printf("Give your sampling frequency (in Hz): ");
         scanf("%hhu",&freq);
@@ -28,10 +29,13 @@ int main (int* argc, char** argv) {
         scanf("%hhu", &mode);
         printf("How many channels do you want to use? (max 8) ");
         scanf("%hhu", &channels);
-    } else if(argc == 4) {
+        printf("How many seconds after self-stop: ");
+        scanf("%hhu", &seconds);
+    } else if(argc == 5) {
         freq = argv[1];
         mode = argv[2];
         channels = argv[3];
+        seconds = argv[4];
     }
 	
     //check error for frequency
@@ -55,31 +59,40 @@ int main (int* argc, char** argv) {
         printf("How many channels do you want to use? (max 8): ");
         scanf("%hhu", &channels);
     }
+    
+    //check error for seconds
+    while(seconds <= 0) {
+        printf("Wrong time value, try again\nHow many seconds after self-stop: ");
+        scanf("%hhu", &seconds);
+    }
+
 
     //start
     config_pkg.sampling_freq = freq;
     config_pkg.channels = channels;
     config_pkg.mode = mode;
+    config_pkg.time = seconds;
     config_pkg.trigger = trigger;
     //setting up serial communication
     int fd = serial_open(DEV_PATH);
     if(fd < 0) 
     	return EXIT_FAILURE;
-    if(uart_set(fd, BAUD, 'n') == -1)
+    if(serial_set(fd, BAUD, 'n') == -1)
     	return EXIT_FAILURE;
     //first of all send primary info to server (atmega)
-    if(uart_write(fd, &config_pkg, sizeof(InitPkg)) == -1) {
-    	exit(EXIT_FAILURE);
-    	//return EXIT_FAILURE;
-    }
-    
+    if(serial_write(fd, &config_pkg, sizeof(InitPkg)) == -1)
+    	//exit(EXIT_FAILURE);
+    	return EXIT_FAILURE;
+    sleep(1);
+
     //waiting for info from server
     DataPkg data_pkg;
     uint8_t loc_cmd = 0;
     FILE* file_fd = fopen("samples.txt", "w");
     while(loc_cmd == 0) {
+        //clear data at every iteration
         memset(&data_pkg, 0, sizeof(DataPkg));
-    	if(uart_read(fd, &data_pkg, sizeof(DataPkg)) == -1)
+    	if(serial_read(fd, &data_pkg, sizeof(DataPkg)) == -1)
     		return EXIT_FAILURE;
         //controllo checksum (primi 32 bit del pacchetto)
         if(!checksum_cmp(checksum_calc(&data_pkg, sizeof(data_pkg)), &data_pkg.checksum))

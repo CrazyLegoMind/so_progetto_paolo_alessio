@@ -122,7 +122,6 @@ uint32_t checksum_calc(void *buffer, size_t len) {
 int checksum_cmp(uint32_t* c1, uint32_t* c2) {
     if(strlen(c1) != strlen(c2))
         return 0;
-    int i=0;
     while(c1 != NULL || c2 != NULL) {
         if(*c1++ != *c2++)
             return 0;
