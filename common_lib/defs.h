@@ -2,17 +2,24 @@
 
 #define PKG_SIZE 2816
 
+<<<<<<< HEAD
 //AA: header per allineamento dati
 #define DATA_HEADER "DataHeader"
 #define INIT_HEADER "InitHeader"
 #define HEADER_SIZE 11              //valida per entrambi gli header
 
+=======
+>>>>>>> master
 //AA: struttura pacchetto (11 bytes = 2816 bits)
 typedef struct _data_pkg {
   uint32_t checksum;                  // generato dal server
   uint16_t data;                      // valore misurato
+<<<<<<< HEAD
   uint8_t mask_pin;                   // pin da dove si legge il valore
   uint8_t cmd;                        // codice per la gestione dei pacchetti
+=======
+  uint8_t mask_pin;                  // pin da dove si legge il valore
+>>>>>>> master
   int timestamp;                      // intero progressivo di mappatura dei pacchetti nell'allocatore
 } DataPkg;
 
