@@ -1,0 +1,31 @@
+#makefile for pc host tests with headers
+
+#include "../../common_lib/defs.h"
+#include "../libraries/serial.h"
+
+IDIR =../libraries
+CC=gcc
+CFLAGS=-I$(IDIR)
+
+ODIR=.
+LDIR =../common_lib
+
+LIBS=-lm
+
+_DEPS = serial.h
+DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+
+_OBJ = serial_test.o serial.o 
+OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+
+
+$(ODIR)/%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+serial_test: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+.PHONY: clean
+
+clean:
+	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~
