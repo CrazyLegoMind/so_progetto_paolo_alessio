@@ -3,12 +3,12 @@
 #include "../../common_lib/defs.h"
 #include "../libraries/serial.h"
 
-IDIR = ../libraries
+IDIR =../libraries
 CC=gcc
 CFLAGS=-I$(IDIR)
 
 ODIR=.
-LDIR =../../common_lib
+LDIR =../common_lib
 
 LIBS=-lm
 
