@@ -150,7 +150,7 @@ int serial_set(int fd, const unsigned int baude, uint8_t parity) {
 /*AA: funzione che restituisce il file descriptor corrispondente al server
 -path: percorso della seriale (in genere /dev/ttyACM0)
 */
-int serial_open(const uint8_t* path) {
+int serial_open(const char* path) {
 	uint32_t fd = open(path, O_RDWR | O_SYNC | O_NOCTTY);
 	if(fd < 0) {
 		fprintf(stderr, "Error opening serial device %s\n", path);
@@ -227,7 +227,7 @@ int serial_read(int fd, void* buf, size_t size) {
         return -1;
     }
 	//save local package 
-    buf = gen_pkg(locbuf, size, buf);
+    buf = gen_pkg(locbuf, buf);
 	free(locbuf);
 	return 1;
 }
