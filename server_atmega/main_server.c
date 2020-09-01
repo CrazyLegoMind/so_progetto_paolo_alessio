@@ -4,8 +4,9 @@
 //#include <fcntl.h>
 #include <string.h>
 #include <assert.h>
+#include <unistd.h>
 
-#include "avr/io.h"
+//#include "avr/io.h"  //da decommentare se serve o cancellare
 #include "libraries/adc.h"
 #include "libraries/uart.h"
 #include "../common_lib/defs.h"
@@ -15,22 +16,28 @@
 //Da host dobbiamo sapere quale modalità adottare, quindi in primis ricevo il pacchetto di configurazione
 //a seconda del valore letto procedo all'invio continuous o buffered
 
-#define SERVER_MSG_HEADER "ServerMsgHeader"
+//#define SERVER_MSG_HEADER "ServerMsgHeader"
 #define MAX_SERVER_STORAGE 1024                 //1K bytes = 10 pacchetti circa
 
-//AA: messaggio che comunica delle situazioni che possono rivelarsi sul atmega
-typedef struct server_msg_ {
-    char* header = SERVER_MSG_HEADER;
-    char* text;
-    size_t text_size;
-} server_msg;
 
 //AA: invia messaggi lato server da stampare su host 
 static void print_server_to_host(struct UART* uart, server_msg* msg) {
+    assert(msg->text_size > 0);
     UART_putString(uart, msg->header, sizeof(msg->header));
+    sleep(0.5);         //do tempo al modulo host di elaborare l'informazione
     UART_putString(uart, msg->text, msg->text_size);
     return;
 }
+
+/* alternativa
+static void print_server_to_host2(struct UART* uart, const char* txt, size_t size) {
+    server_msg* msg = malloc(sizeof(server_msg));
+    msg->text = txt;
+    msg->text_size = size;
+    UART_putString(uart, msg->header, sizeof(msg->header));
+    UART_putString(uart, msg->text, msg->text_size);
+    free(msg);
+} */
 
 int main(int argc, char** argv) {
 
@@ -65,6 +72,14 @@ int main(int argc, char** argv) {
     printf("Settings received from host. The selected mode is %s.\n", (pkg.mode == 0 ? "continuous" : "buffered"));
 
     //get data from packet to set server
+    int mode = pkg.mode;
+    if(!mode) {
+        //continuous
+
+    } else {
+        //buffered
+
+    }
 
     //sampling data 
 
