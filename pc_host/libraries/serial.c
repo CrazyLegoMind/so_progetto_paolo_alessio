@@ -40,7 +40,7 @@ int serial_set(int fd, const unsigned int baude, uint8_t parity) {
             cfsetispeed(&options,B38400);
             cfsetospeed(&options,B38400);
             break;
-	 case 115200:
+	    case 115200:
             cfsetispeed(&options,B115200);
             cfsetospeed(&options,B115200);
             break;
@@ -169,6 +169,7 @@ static DataPkg* gen_pkg(uint8_t* buf, size_t bufsize) {
 	return pkg;
 }
 
+//da modificare
 static char* select_header(size_t dim) {
     return (dim == 11 ? DATA_HEADER : INIT_HEADER);
 }
