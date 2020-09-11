@@ -4,7 +4,7 @@
 //#include <fcntl.h>
 #include <string.h>
 #include <assert.h>
-#include <avr/delay.h>
+#include <util/delay.h>
 //#include <unistd.h>
 
 //#include "avr/io.h"  //da decommentare se serve o cancellare
@@ -101,11 +101,10 @@ int main(int argc, char** argv) {
 
     struct UART* uart_fd = UART_init();
     //AA: waiting InitPkg from host
-    while(UART_getData(uart_fd, buffer_init, sizeof(buffer_init))) {
-        printf("Waiting for settings from host...");
-    }
+    while(UART_getData(uart_fd, buffer_init, sizeof(buffer_init)));
     //some examples
-    if(!buffer_init) {
+    /*
+      if(buffer_init == NULL) {
         server_msg* msg1 = malloc(sizeof(server_msg));
         msg1->text = "Error while receveing init pkg";
         msg1->text_size = sizeof(msg1->text);
@@ -120,9 +119,8 @@ int main(int argc, char** argv) {
         free(msg2);
         return EXIT_FAILURE;
     }
-    
+    //*/
     memcpy(&pkg, &buffer_init[0], sizeof(buffer_init));
-    //printf("Settings received from host. The selected mode is %s.\n", (pkg.mode == 0 ? "continuous" : "buffered"));
 
     //PDGZ
     //get data from packet to set server
@@ -156,7 +154,7 @@ int main(int argc, char** argv) {
       TIMER_enable_interrupt(1);
       while(readings_done < readings_todo){
 	if (interrupt_occurred){
-	  UART_putString(uart_fd, pkg_temp, sizeof(DataPkg));
+	  UART_putString(uart_fd, (uint8_t*) pkg_temp, sizeof(DataPkg));
 
 
 	}
@@ -171,6 +169,8 @@ int main(int argc, char** argv) {
     //sampling data 
 
     //send data to host
-
+    while(1){
+       UART_putString(uart_fd, (uint8_t*) pkg_temp, sizeof(DataPkg));
+    }
     return EXIT_SUCCESS;
 }
