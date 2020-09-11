@@ -47,7 +47,7 @@ typedef struct _data_pkg {
 static void print_server_to_host(struct UART* uart, server_msg* msg) {
     assert(msg->text_size > 0);
     UART_putString(uart, msg->header, sizeof(msg->header));
-    _delay_ms(100);;         //do tempo al modulo host di elaborare l'informazione
+    _delay_ms(100);         //do tempo al modulo host di elaborare l'informazione
     UART_putString(uart, msg->text, msg->text_size);
     return;
 }
@@ -95,8 +95,8 @@ int main(int argc, char** argv) {
 
     //AA: spazio per ricezione InitPkg e invio dati (in buffered mode)
     InitPkg pkg;
-    char* buffer_data[MAX_SERVER_STORAGE];
-    char* buffer_init[sizeof(InitPkg)+1];
+    char buffer_data[MAX_SERVER_STORAGE];
+    char buffer_init[sizeof(InitPkg)+1];
     buffer_init[sizeof(InitPkg)] = '\0';
 
     struct UART* uart_fd = UART_init();
@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
     }
     
     memcpy(&pkg, &buffer_init[0], sizeof(buffer_init));
-    printf("Settings received from host. The selected mode is %s.\n", (pkg.mode == 0 ? "continuous" : "buffered"));
+    //printf("Settings received from host. The selected mode is %s.\n", (pkg.mode == 0 ? "continuous" : "buffered"));
 
     //PDGZ
     //get data from packet to set server
@@ -141,13 +141,13 @@ int main(int argc, char** argv) {
       // 2 e 4 list= [2,4,8,8,8,8,8,8]
       int p = 0,e = 7;
       for (int i = 0; i < 8; i++){
-	if(channels_mask & 1 << i){
-	  channels_list[p] = i;
-	  p++;
-	}else{
-	  channels_list[e] = 8;
-	  e--;
-	}
+        if(channels_mask & 1 << i){
+          channels_list[p] = i;
+          p++;
+        }else{
+          channels_list[e] = 8;
+          e--;
+        }
       }
 
       pkg_temp = (DataPkg*) malloc(sizeof(DataPkg));
