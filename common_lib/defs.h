@@ -44,7 +44,7 @@ typedef struct _init_pkg {
 
 //AA: messaggio di debug per atmega
 typedef struct server_msg_ {
-    char* header = SERVER_MSG_HEADER;
+  char* header; //= SERVER_MSG_HEADER;
     char* text;
     size_t text_size;
 } server_msg;
