@@ -85,14 +85,14 @@ int main(int argc, char** argv) {
     uint8_t cmd = 0;
     while(counter <  num_data_pkgs && cmd != EOT) {
       printf("trying to read  %d\n",counter);
-        if(serial_read(fd, data_pkgs[counter], sizeof(DataPkg)) == -1) {
-            perror("An error occurs while reading from server.\n");
-            break;
-            //return EXIT_FAILURE;
-        }
-        print_pkg(data_pkgs[counter]);
-        cmd = data_pkgs[counter]->cmd;
-	counter++;
+      if(serial_read(fd, data_pkgs[counter], sizeof(DataPkg)) == -1) {
+	perror("An error occurs while reading from server.\n");
+	break;
+	//return EXIT_FAILURE;
+      }
+      print_pkg(data_pkgs[counter]);
+      cmd = data_pkgs[counter]->cmd;
+      counter++;
     }
 
     /*
