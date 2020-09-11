@@ -4,12 +4,35 @@
 //#include <fcntl.h>
 #include <string.h>
 #include <assert.h>
-#include <unistd.h>
+#include <avr/delay.h>
+//#include <unistd.h>
 
 //#include "avr/io.h"  //da decommentare se serve o cancellare
 #include "libraries/adc.h"
 #include "libraries/uart.h"
+#include "libraries/timer_interrupt.h"
 #include "../common_lib/defs.h"
+
+
+/* struttura pacchetti ricevuti
+typedef struct _init_pkg {
+  uint8_t sampling_freq;
+  uint8_t channels;
+  uint8_t mode;
+  uint8_t time;   //seconds
+  int trigger;
+} InitPkg;
+
+typedef struct _data_pkg {
+  uint32_t checksum;                  // controllo integrità dati, generato dal server
+  uint16_t data;                      // valore misurato
+  uint8_t mask_pin;                   // pin da dove si legge il valore
+  uint8_t cmd;                        // codice per la gestione dei pacchetti
+  int timestamp;                      // intero che rappresenta l'epoca dei pacchetti
+} DataPkg;
+ */
+
+
 
 
 //AA: gestione pacchetti da server
@@ -24,7 +47,7 @@
 static void print_server_to_host(struct UART* uart, server_msg* msg) {
     assert(msg->text_size > 0);
     UART_putString(uart, msg->header, sizeof(msg->header));
-    sleep(0.5);         //do tempo al modulo host di elaborare l'informazione
+    _delay_ms(100);;         //do tempo al modulo host di elaborare l'informazione
     UART_putString(uart, msg->text, msg->text_size);
     return;
 }
@@ -38,6 +61,35 @@ static void print_server_to_host2(struct UART* uart, const char* txt, size_t siz
     UART_putString(uart, msg->text, msg->text_size);
     free(msg);
 } */
+
+
+
+
+//PDGZ:
+
+//dati condivisi con  l'isr della lettura adc
+uint8_t channels_list[8] = {8,8,8,8,8,8,8,8};
+volatile uint8_t interrupt_occurred = 0;
+uint16_t readings_done = 0;
+DataPkg* pkg_temp;
+
+
+ISR(TIMER_INTERRUPT){
+  readings_done++;
+  uint8_t i = 0;
+  while(i < 8){
+    if(channels_list[i] != 8){
+      uint16_t res = ADC_single_conversion(channels_list[i]);
+      pkg_temp->data = res;
+      pkg_temp->mask_pin = i;
+      pkg_temp->timestamp = readings_done;
+    }else{
+      break;
+    }
+  }
+  interrupt_occurred = 1;
+}
+
 
 int main(int argc, char** argv) {
 
@@ -68,13 +120,48 @@ int main(int argc, char** argv) {
         free(msg2);
         return EXIT_FAILURE;
     }
+    
     memcpy(&pkg, &buffer_init[0], sizeof(buffer_init));
     printf("Settings received from host. The selected mode is %s.\n", (pkg.mode == 0 ? "continuous" : "buffered"));
 
+    //PDGZ
     //get data from packet to set server
-    int mode = pkg.mode;
+    uint8_t mode = pkg.mode; //data
+    uint8_t sampling_freq = pkg.sampling_freq; //hz
+    uint8_t channels_mask = pkg.channels; //channel mask
+    uint8_t time = pkg.time;   //seconds
+    int trigger = pkg.trigger; //adc reading
+    uint16_t readings_todo = sampling_freq*time;
     if(!mode) {
         //continuous
+
+      //inizializzo la lista dei canali da leggere con l'adc
+      //la lista avrà i canali da leggere all'inizio e tutti
+      // 8 nelle rimanenti posizioni vuote, es voglio leggere
+      // 2 e 4 list= [2,4,8,8,8,8,8,8]
+      int p = 0,e = 7;
+      for (int i = 0; i < 8; i++){
+	if(channels_mask & 1 << i){
+	  channels_list[p] = i;
+	  p++;
+	}else{
+	  channels_list[e] = 8;
+	  e--;
+	}
+      }
+
+      pkg_temp = (DataPkg*) malloc(sizeof(DataPkg));
+      
+      TIMER_set_frequency(sampling_freq);
+      TIMER_enable_interrupt(1);
+      while(readings_done < readings_todo){
+	if (interrupt_occurred){
+	  UART_putString(uart_fd, pkg_temp, sizeof(DataPkg));
+
+
+	}
+      }
+      TIMER_enable_interrupt(0);
 
     } else {
         //buffered
