@@ -211,46 +211,45 @@ static int serial_align_data(uint8_t* src, uint8_t* dest, size_t size) {
 -size: quanto si vuole leggere dal server
 */ 
 int serial_read(int fd, void* buf, size_t size) {
-    size += HEADER_SIZE;
-	uint8_t* locbuf = malloc(size);
-	uint8_t aux;
-	int i;
-	for(i=0; i < size; i++) {
-		if(read(fd, &aux, sizeof(uint8_t)) == -1) {
-			fprintf(stderr, "Error while reading byte %d", i);
-			free(locbuf);	
-			return -1;
-		}
-		*(locbuf+i) = aux;
-	}
-	//printf("Read completed.\n");
-    //align data
-    if(serial_align_data(locbuf,buf,size) == -1) {
-        printf("Error while aligning data!\n");
-        return -1;
+  size += HEADER_SIZE;
+  uint8_t* locbuf = malloc(size);
+  uint8_t aux;
+  int i;
+  for(i=0; i < size; i++) {
+    if(read(fd, &aux, sizeof(uint8_t)) == -1) {
+      fprintf(stderr, "Error while reading byte %d", i);
+      free(locbuf);	
+      return -1;
     }
-	//save local package 
-    buf = gen_pkg(locbuf, sizeof(buf));
-	free(locbuf);
-	return 1;
+    *(locbuf+i) = aux;
+  }
+  //printf("Read completed.\n");
+  //align data
+  if(serial_align_data(locbuf,buf,size) == -1) {
+    printf("Error while aligning data!\n");
+    return -1;
+  }
+  //save local package 
+  buf = gen_pkg(locbuf, sizeof(buf));
+  free(locbuf);
+  return 1;
 }
 
 /*AA: funzione di scrittura dati verso il server */ 
 int serial_write(int fd, void* buf, size_t size) {
-	uint8_t* b = malloc(size + HEADER_SIZE);
-    char* header = select_header(size);
-    memcpy(b, header, HEADER_SIZE);
-	memcpy(b+HEADER_SIZE, buf, size);
-	int i;
-	for(i=0; i < size; i++) {
-		//send data to server 1 byte per time
-		if(write(fd, b+i, sizeof(uint8_t)) == -1) {
-			fprintf(stderr,"Error while writing byte %d\n",i);
-			free(b);	
-			return -1;
-		}
-	} 
-	//printf("Write completed.\n");
-	free(b);
-	return 1;
+  uint8_t* b = malloc(size + HEADER_SIZE);
+  memcpy(b, INIT_HEADER, HEADER_SIZE);
+  memcpy(b+HEADER_SIZE, buf, size);
+  int i;
+  for(i=0; i < size; i++) {
+    //send data to server 1 byte per time
+    if(write(fd, b+i, sizeof(uint8_t)) == -1) {
+      fprintf(stderr,"Error while writing byte %d\n",i);
+      free(b);	
+      return -1;
+    }
+  } 
+  //printf("Write completed.\n");
+  free(b);
+  return 1;
 }

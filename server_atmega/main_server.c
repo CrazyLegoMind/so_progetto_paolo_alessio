@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
 
     struct UART* uart_fd = UART_init();
     //AA: waiting InitPkg from host
-    while(UART_getData(uart_fd, buffer_init, sizeof(buffer_init)));
+    while(!UART_getData(uart_fd, buffer_init, sizeof(buffer_init)));
     //some examples
     /*
       if(buffer_init == NULL) {
