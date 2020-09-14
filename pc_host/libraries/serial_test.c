@@ -7,7 +7,7 @@
 #include "../libraries/serial.h"
 
 //AA test ricezione e invio dati su host
-
+// compile command = gcc -Wall serial_test.c serial.c -o serial_test
 #define EOT 0x1
 
 void print_pkg(DataPkg* pkg) {
@@ -64,7 +64,6 @@ int main(int argc, char** argv) {
     printf("Done.\n");
     //sleep(1);
     */
-
     InitPkg* config_pkg = (InitPkg*)malloc(sizeof(InitPkg));
     config_pkg->channels = 1;
     config_pkg->mode = 0;
@@ -85,14 +84,21 @@ int main(int argc, char** argv) {
     uint8_t cmd = 0;
     while(counter <  num_data_pkgs && cmd != EOT) {
       printf("trying to read  %d\n",counter);
+      int try = 1;
+      while(serial_read(fd, data_pkgs[counter], sizeof(DataPkg) == -1)){
+	printf("try %d An error occurs while reading from server.\n",try++);
+	
+      }
+      /*
         if(serial_read(fd, data_pkgs[counter], sizeof(DataPkg)) == -1) {
-            perror("An error occurs while reading from server.\n");
-            break;
-            //return EXIT_FAILURE;
-        }
-        print_pkg(data_pkgs[counter]);
-        cmd = data_pkgs[counter]->cmd;
-	counter++;
+	perror("An error occurs while reading from server.\n");
+	break;
+	//return EXIT_FAILURE;
+	}
+      */
+      print_pkg(data_pkgs[counter]);
+      cmd = data_pkgs[counter]->cmd;
+      counter++;
     }
 
     /*
