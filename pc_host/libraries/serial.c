@@ -237,12 +237,11 @@ int serial_read(int fd, void* buf, size_t size) {
 
 /*AA: funzione di scrittura dati verso il server */ 
 int serial_write(int fd, void* buf, size_t size) {
-  printf("[DEBUG]printing to serial  %d byte + %dhead size\n", size,HEADER_SIZE);
   uint8_t* b = malloc(size + HEADER_SIZE);
   memcpy(b, INIT_HEADER, HEADER_SIZE);
   memcpy(b+HEADER_SIZE, buf, size);
   int i;
-  for(i=0; i < size+HEADER_SIZE; i++) {
+  for(i=0; i < size; i++) {
     //send data to server 1 byte per time
     if(write(fd, b+i, sizeof(uint8_t)) == -1) {
       fprintf(stderr,"Error while writing byte %d\n",i);
