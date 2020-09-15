@@ -108,7 +108,7 @@ ISR(USART0_UDRE_vect){
   }
 }
 
-
+//assumo che una stringa qualsiasi abbia bisogno di header 
 void UART_putString(struct UART * uart,uint8_t * buf, size_t size){
   uint8_t * msg = malloc(size+HEADER_SIZE);
   memcpy(msg,DATA_HEADER,HEADER_SIZE);
@@ -120,6 +120,8 @@ void UART_putString(struct UART * uart,uint8_t * buf, size_t size){
   free(msg);
 }
 
+
+//metodo da risistemare, non usare
 void UART_putData(struct UART * uart, uint8_t * data, uint32_t data_size, uint8_t data_type){
   //struct data d = fill_data(data,data_size,data_type);
   uint8_t* b = malloc(data_size + HEADER_SIZE);
@@ -136,25 +138,28 @@ uint8_t UART_getData(struct UART * uart, uint8_t * buf, size_t data_size){
     const int internal_buffer_size = UART_rxbufferSize(uart);
 
     for(i = 0;i<internal_buffer_size;i++){
-      //Seraching for header head
+      //Cerco la posizione dell'header
       for(k=0;k<strlen(INIT_HEADER);k++){
         if(uart->rx_buffer[(i+k)%internal_buffer_size]!=INIT_HEADER[k])
           break;
       }
-      if(k==strlen(INIT_HEADER))//Data start at index i
-      {
-        i = (i+k)%internal_buffer_size;//I contains first index of data
-        if(uart->rx_end < i+data_size)
-          return 0;
+      //se ho trovato tutto l'header allora i è l'offset da cui iniziano i dati
+      if(k==strlen(INIT_HEADER)){
+	i = (i+k)%internal_buffer_size;//I contains first index of data
 
-        for(k=0;k<data_size;k++)
-          buf[k]=uart->rx_buffer[(i+k)%internal_buffer_size];
+	//se non sono arrivati abbastanza bit  ritorno subito con fail
+	if(uart->rx_end < i+data_size) return 0;
 
-        uart->rx_end=0;
-        memset(uart->rx_buffer,0,internal_buffer_size);
-        return 1;
+	//altrimenti scrivo i dati nel buffer passato
+	for(k=0;k<data_size;k++) buf[k]=uart->rx_buffer[(i+k)%internal_buffer_size];
+
+	//pulisco il buffer di ricezione
+	uart->rx_end=0;
+	memset(uart->rx_buffer,0,internal_buffer_size);
+	return 1;
       }
     }
+    //se non ho trovato mai l'header intero nel buffer ritorno come fail
     return 0;
   }
   return 0;
