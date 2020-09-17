@@ -25,14 +25,14 @@
 # to be uploaded on the avr
 # you can add multiple files, they will be all generated
 
-BINS=
+BINS=main_server.elf
 
 # put here the additional .o files you want to generate
 # one .c file for each .o should be present
-OBJS=
+OBJS= libraries/adc.o libraries/uart.o libraries/timer_interrupt.o
 
 # put here the additional header files needed for compilation
-HEADERS=
+HEADERS= libraries/adc.h libraries/uart.h libraries/timer_interrupt.h ../common_lib/defs.h
 
 
 # the file below contains the actual rules

@@ -124,7 +124,7 @@ void UART_putData(struct UART * uart, uint8_t * data, uint32_t data_size, uint8_
   //struct data d = fill_data(data,data_size,data_type);
   uint8_t* b = malloc(data_size + HEADER_SIZE);
   memcpy(b, DATA_HEADER, HEADER_SIZE);
-  memcpy(b+HEADER_SIZE, buf, data_size);
+  memcpy(b+HEADER_SIZE, data, data_size);
   UART_putString(uart,&b,data_size + HEADER_SIZE);
   free(b);
 }
