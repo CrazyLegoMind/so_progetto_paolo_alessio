@@ -71,7 +71,7 @@ static void print_server_to_host2(struct UART* uart, const char* txt, size_t siz
 uint8_t channels_list[8] = {8,8,8,8,8,8,8,8};
 volatile uint8_t interrupt_occurred = 0;
 uint16_t readings_done = 0;
-DataPkg* pkg_temp;
+DataPkg  pkg_temp;
 
 
 ISR(TIMER_INTERRUPT){
@@ -80,9 +80,9 @@ ISR(TIMER_INTERRUPT){
   while(i < 8){
     if(channels_list[i] != 8){
       uint16_t res = ADC_single_conversion(channels_list[i]);
-      pkg_temp->data = res;
-      pkg_temp->mask_pin = i;
-      pkg_temp->timestamp = readings_done;
+      pkg_temp.data = res;
+      pkg_temp.mask_pin = i;
+      pkg_temp.timestamp = readings_done;
     }else{
       break;
     }
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
     //AA: spazio per ricezione InitPkg e invio dati (in buffered mode)
     InitPkg pkg;
     char buffer_data[MAX_SERVER_STORAGE];
-    char buffer_init[sizeof(InitPkg)+1];
+    uint8_t buffer_init[sizeof(InitPkg)+1];
     buffer_init[sizeof(InitPkg)] = '\0';
 
     struct UART* uart_fd = UART_init();
@@ -147,14 +147,18 @@ int main(int argc, char** argv) {
           e--;
         }
       }
-
-      pkg_temp = (DataPkg*) malloc(sizeof(DataPkg));
-      
+      //pulisco il temp pkg
+      pkg_temp.checksum = 0;
+      pkg_temp.data = 0;
+      pkg_temp.mask_pin = 0;
+      pkg_temp.cmd = 0;
+      pkg_temp.timestamp  = 0;
+      //pkg_temp. = 0;
       TIMER_set_frequency(sampling_freq);
       TIMER_enable_interrupt(1);
       while(readings_done < readings_todo){
 	if (interrupt_occurred){
-	  UART_putString(uart_fd, (uint8_t*) pkg_temp, sizeof(DataPkg));
+	  UART_putString(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg));
 
 
 	}
@@ -170,7 +174,7 @@ int main(int argc, char** argv) {
 
     //send data to host
     while(1){
-       UART_putString(uart_fd, (uint8_t*) pkg_temp, sizeof(DataPkg));
+       UART_putString(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg));
     }
     return EXIT_SUCCESS;
 }
