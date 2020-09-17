@@ -25,11 +25,14 @@ int main(int argc, char** argv) {
       printf("failed to open serial\n");
       return EXIT_FAILURE;
     }
-    int res_set = serial_set(fd, 115200, 'N');
+    int res_set = serial_set(fd, 115200, 0);
     if(res_set == -1){
       printf("failed to set serial\n");
       return EXIT_FAILURE;
     }
+    serial_set_blocking(fd,1);
+    sleep(1);
+
     printf("Done.\n");
 
     /*
@@ -70,11 +73,13 @@ int main(int argc, char** argv) {
     config_pkg->sampling_freq = 10;
     config_pkg->time = 2;
     config_pkg->trigger = 0;
-    if(serial_write(fd, config_pkg, sizeof(InitPkg)) == -1) {
+    for(int tr = 0; tr < 3; tr++){
+      if(serial_write(fd, config_pkg, sizeof(InitPkg)) == -1) {
         printf("There is something wrong on the writing...\n");
         return EXIT_FAILURE;
+      }
     }
-
+    serial_write(fd,"0000000000",10);
     //read test
     int num_data_pkgs = config_pkg->sampling_freq * config_pkg->time;
     DataPkg** data_pkgs = (DataPkg**)malloc(sizeof(DataPkg*) * num_data_pkgs);
@@ -85,7 +90,7 @@ int main(int argc, char** argv) {
     while(counter <  num_data_pkgs && cmd != EOT) {
       printf("trying to read  %d\n",counter);
       int try = 1;
-      while(serial_read(fd, data_pkgs[counter], sizeof(DataPkg) == -1)){
+      while(serial_read(fd, data_pkgs[counter], sizeof(DataPkg)) == -1){
 	printf("try %d An error occurs while reading from server.\n",try++);
 	
       }

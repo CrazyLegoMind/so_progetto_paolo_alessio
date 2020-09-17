@@ -10,205 +10,127 @@
 
 
 /* 
-AA: funzione che imposta la comunicazione seriale UART
--fd: file descriptor della seriale
--baude: bauderate da impostare (4800, 9600. 19200, 38400, 115200)
--parity: impostazione controllo di parità (n-N default, o-O, e-E)
+   AA: funzione che imposta la comunicazione seriale UART
+   -fd: file descriptor della seriale
+   -baude: bauderate da impostare (4800, 9600. 19200, 38400, 115200)
+   -parity: impostazione controllo di parità (n-N default, o-O, e-E)
 */
-int serial_set(int fd, const unsigned int baude, uint8_t parity) {
-    struct termios options;
+int serial_set(int fd, int speed, int parity) {
+  struct termios tty;
+  memset (&tty, 0, sizeof tty);
+  if (tcgetattr (fd, &tty) != 0) {
+    printf ("error from tcgetattr");
+    return -1;
+  }
+  switch (speed){
+  case 9600:
+    speed=B9600;
+  break;
+  case 19200:
+    speed=B19200;
+    break;
+  case 57600:
+    speed=B57600;
+    break;
+  case 115200:
+    speed=B115200;
+    break;
+  default:
+    printf("cannot sed baudrate %d\n", speed);
+    return -1;
+  }
+  cfsetospeed (&tty, speed);
+  cfsetispeed (&tty, speed);
+  cfmakeraw(&tty);
+  // enable reading
+  tty.c_cflag &= ~(PARENB | PARODD);               // shut off parity
+  tty.c_cflag |= parity;
+  tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;      // 8-bit chars
 
-    //AA: impostazione iniziale del riferimento termios basato su fd
-    if(tcgetattr(fd,&options) < 0) {
-	perror("tcgetattr error");
-        return -1;
-    }
-
-    //set dei baudrate in input e output
-    switch(baude) {
-        case 4800:
-            cfsetispeed(&options,B4800);
-            cfsetospeed(&options,B4800);
-            break;
-        case 9600:
-            cfsetispeed(&options,B9600);
-            cfsetospeed(&options,B9600);
-            break;
-        case 19200:
-            cfsetispeed(&options,B19200);
-            cfsetospeed(&options,B19200);
-            break;
-        case 38400:
-            cfsetispeed(&options,B38400);
-            cfsetospeed(&options,B38400);
-            break;
-	    case 115200:
-            cfsetispeed(&options,B115200);
-            cfsetospeed(&options,B115200);
-            break;
-        default:
-            printf("Unkown baude!\n");
-            return -1;
-    }
-
-    options.c_cflag |= CLOCAL;
-    options.c_cflag |= CREAD;
-
-
-    // AA qui si imposta la grandezza dei caratteri durante la trasmissione
-    // default 8 bit
-    /*
-    switch(bits) {
-        case 5:
-            options.c_cflag &= ~CSIZE;
-            options.c_cflag |= CS5;
-            break;
-        case 6:
-            options.c_cflag &= ~CSIZE;
-            options.c_cflag |= CS6;
-            break;
-        case 7:
-            options.c_cflag &= ~CSIZE;
-            options.c_cflag |= CS7;
-            break;
-        case 8: */
-            options.c_cflag &= ~CSIZE;
-            options.c_cflag |= CS8;
-    /*
-            break;
-        default:
-            fprintf(stderr,"Unkown bits!\n");
-            return -1;
-    } */
-
-    //AA qui si imposta il controllo di parità sui dati (n-N: normal, e-E: even, o-O: odd)
-    switch(parity) {
-        case 'n':
-        case 'N':
-            options.c_cflag &= ~PARENB;
-            options.c_iflag &= ~INPCK;
-            break;
-        case 'o':
-        case 'O':
-            options.c_cflag |= PARENB;
-            options.c_cflag |= PARODD;
-            options.c_iflag |= INPCK;
-            options.c_iflag |= ISTRIP;
-            break;
-        case 'e':
-        case 'E':
-            options.c_cflag |= PARENB;
-            options.c_cflag &= ~PARODD;
-            options.c_iflag |= INPCK;
-            options.c_iflag |= ISTRIP;
-            break;
-        default:
-            fprintf(stderr,"Unkown parity!\n");
-            return -1;
-    }
-
-    /*impostazione del numero di stop bits (1 o 2)
-    switch(stop)
-    {
-        case 1:
-            options.c_cflag &= ~CSTOPB;
-            break;
-        case 2:
-            options.c_cflag |= CSTOPB;
-            break;
-        default:
-            fprintf(stderr,"Unkown stop!\n");
-            return -1;
-    } */
-
-    //AA: impostazioni output
-    options.c_oflag &= ~OPOST;
-    options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-    //impostazioni outoput in non-canonical mode (quando ICANON non è abilitato)
-    //in questo caso ogni lettura tramite syscall read è bloccata fino a quando 1 byte è disponibile, e ritorna il numero di byte richiesti (fonte: linux man)
-    options.c_cc[VMIN] = 1;
-    options.c_cc[VTIME] = 5;	//0.1 seconds timeout
-
-    tcflush(fd,TCIFLUSH);
-    
-    //AA: si settano i parametri imposti nella struct termios con effetto immediato (dal flag TCSANOW)
-    if(tcsetattr(fd,TCSANOW,&options) < 0)
-    {
-        perror("tcsetattr failed");
-        return -1;
-    }
-
-    /* AA: debug check sulle nuove impostazioni
-    if(tcgetattr(fd,&options) < 0) {
-	perror("tcgetattr error");
-        return -1;
-    }
-    */
-
-    return 0;
-
+  if (tcsetattr (fd, TCSANOW, &tty) != 0) {
+    printf ("error from tcsetattr");
+    return -1;
+  }
+  return 0;
 }
+
+
 
 /*AA: funzione che restituisce il file descriptor corrispondente al server
--path: percorso della seriale (in genere /dev/ttyACM0)
+  -path: percorso della seriale (in genere /dev/ttyACM0)
 */
-int serial_open(const char* path) {
-	uint32_t fd = open(path, O_RDWR | O_SYNC | O_NOCTTY);
-	if(fd < 0) {
-		fprintf(stderr, "Error opening serial device %s\n", path);
-		return -1;
-	}
-	return fd;
+int serial_open(const char* name) {
+  int fd = open (name, O_RDWR | O_NOCTTY | O_SYNC );
+  if (fd < 0) {
+    fprintf (stderr,"error opening serial, fd %d\n", fd);
+  }
+  return fd;
 }
 
+void serial_set_blocking(int fd, int should_block) {
+  struct termios tty;
+  memset (&tty, 0, sizeof tty);
+  if (tcgetattr (fd, &tty) != 0) {
+      printf ("error from tggetattr");
+      return;
+  }
+
+  tty.c_cc[VMIN]  = should_block ? 1 : 0;
+  tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
+
+  if (tcsetattr (fd, TCSANOW, &tty) != 0)
+    printf ("error setting term attributes");
+}
+
+
 /*AA: funzione ausiliaria che ricopia i dati contenuti in un buffer e genera un pacchetto di informazioni
--buf: buffer da cui prendere le informazioni
--bufsize: grandezza buffer
+  -buf: buffer da cui prendere le informazioni
+  -bufsize: grandezza buffer
 */
 static DataPkg* gen_pkg(uint8_t* buf, size_t bufsize) {
-	DataPkg* pkg = (DataPkg*)malloc(sizeof(DataPkg));
-	memcpy(pkg, buf, bufsize);
-	return pkg;
+  DataPkg* pkg = (DataPkg*)malloc(sizeof(DataPkg));
+  memcpy(pkg, buf, bufsize);
+  return pkg;
 }
 
 //da modificare
 static char* select_header(size_t dim) {
-    return (dim == 11 ? DATA_HEADER : INIT_HEADER);
+  return (dim == 11 ? DATA_HEADER : INIT_HEADER);
 }
 
 /*AA: funzione per allineamento dati riicevuti dalla seriale
--src: puntatore ad area da esaminare
--dest: puntatore ad area da restituire
--size: dimensione memoria
+  -src: puntatore ad area da esaminare
+  -dest: puntatore ad area da restituire
+  -size: dimensione memoria
 */
 static int serial_align_data(uint8_t* src, uint8_t* dest, size_t size, char* header) {
-    uint8_t* tmp = malloc(size*2);
-    memcpy(tmp, src, size);
-    memcpy(tmp+size, src, size);
-    int i,c;
-    //char* header = select_header(size);
-    for(i=0; i < size; i++) {
-        //trova posizione dell'header
-        c = memcmp(tmp+i, header, HEADER_SIZE);
-        if(!c) break;
-    }
+  uint8_t* tmp = malloc(size*2);
+  memcpy(tmp, src, size);
+  memcpy(tmp+size, src, size);
+  int i,c;
+  //char* header = select_header(size);
+  for(i=0; i < size; i++) {
+    //trova posizione dell'header
+    c = memcmp(tmp+i, header, HEADER_SIZE);
+    if(!c) break;
+  }
 
-    if(i==size)
-        return -1;
-    i += HEADER_SIZE;
-    for(int j=0; j < size - HEADER_SIZE; j++) { 
-        i = i%size;
-        *(dest+j) = *(src+i);
-        i++;
-    }
-    free(tmp);
-    return 1;
+  if(i==size)
+    return -1;
+  i += HEADER_SIZE;
+  for(int j=0; j < size - HEADER_SIZE; j++) { 
+    i = i%size;
+    *(dest+j) = *(src+i);
+    i++;
+  }
+  free(tmp);
+  return 1;
 }
 
 /*AA: funzione di lettura di 8 bit alla volta dal server
--fd: file descriptor generato da uart_fd
--buf: riferimento all'oggetto che si vuole leggere
--size: quanto si vuole leggere dal server
+  -fd: file descriptor generato da uart_fd
+  -buf: riferimento all'oggetto che si vuole leggere
+  -size: quanto si vuole leggere dal server
 */ 
 int serial_read(int fd, void* buf, size_t size) {
   size += HEADER_SIZE;
@@ -226,6 +148,11 @@ int serial_read(int fd, void* buf, size_t size) {
   }
   //printf("Read completed.\n");
   //align data
+  printf("DATA RECEIVED  with size %d: ",size);
+  for(i = 0; i < size; i++){
+    printf("%c",locbuf[i]);
+  }
+  printf("\n");
   printf("[DEBUG] searching header %s\n",DATA_HEADER);
   if(serial_align_data(locbuf,buf,size,DATA_HEADER) == -1) {
     printf("Error while aligning data!\n");
@@ -243,6 +170,12 @@ int serial_write(int fd, void* buf, size_t size) {
   memcpy(b, INIT_HEADER, HEADER_SIZE);
   memcpy(b+HEADER_SIZE, buf, size);
   int i;
+  size += HEADER_SIZE;
+  printf("DATA sent with size %d: ",size);
+  for(i = 0; i < size; i++){
+    printf("%c",b[i]);
+  }
+  printf("\n");
   for(i=0; i < size; i++) {
     //send data to server 1 byte per time
     if(write(fd, b+i, sizeof(uint8_t)) == -1) {
