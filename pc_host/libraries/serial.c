@@ -4,8 +4,10 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <string.h>
+#include <unistd.h>
 #include "serial.h"
 #include "../../common_lib/defs.h"
+
 
 /* 
 AA: funzione che imposta la comunicazione seriale UART
@@ -124,8 +126,8 @@ int serial_set(int fd, const unsigned int baude, uint8_t parity) {
     options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
     //impostazioni outoput in non-canonical mode (quando ICANON non è abilitato)
     //in questo caso ogni lettura tramite syscall read è bloccata fino a quando 1 byte è disponibile, e ritorna il numero di byte richiesti (fonte: linux man)
-    options.c_cc[VTIME] = 0;
-    options.c_cc[VMIN] = 1;	//0.1 seconds timeout
+    options.c_cc[VMIN] = 1;
+    options.c_cc[VTIME] = 5;	//0.1 seconds timeout
 
     tcflush(fd,TCIFLUSH);
     
@@ -179,12 +181,12 @@ static char* select_header(size_t dim) {
 -dest: puntatore ad area da restituire
 -size: dimensione memoria
 */
-static int serial_align_data(uint8_t* src, uint8_t* dest, size_t size) {
+static int serial_align_data(uint8_t* src, uint8_t* dest, size_t size, char* header) {
     uint8_t* tmp = malloc(size*2);
     memcpy(tmp, src, size);
     memcpy(tmp+size, src, size);
     int i,c;
-    char* header = select_header(size);
+    //char* header = select_header(size);
     for(i=0; i < size; i++) {
         //trova posizione dell'header
         c = memcmp(tmp+i, header, HEADER_SIZE);
@@ -209,46 +211,47 @@ static int serial_align_data(uint8_t* src, uint8_t* dest, size_t size) {
 -size: quanto si vuole leggere dal server
 */ 
 int serial_read(int fd, void* buf, size_t size) {
-    size += HEADER_SIZE;
-	uint8_t* locbuf = malloc(size);
-	uint8_t aux;
-	int i;
-	for(i=0; i < size; i++) {
-		if(read(fd, &aux, sizeof(uint8_t)) == -1) {
-			fprintf(stderr, "Error while reading byte %d", i);
-			free(locbuf);	
-			return -1;
-		}
-		*(locbuf+i) = aux;
-	}
-	//printf("Read completed.\n");
-    //align data
-    if(serial_align_data(locbuf,buf,size) == -1) {
-        printf("Error while aligning data!\n");
-        return -1;
+  size += HEADER_SIZE;
+  uint8_t* locbuf = malloc(size);
+  uint8_t aux;
+
+  int i;
+  for(i=0; i < size; i++) {
+    if(read(fd, &aux, sizeof(uint8_t)) == -1) {
+      fprintf(stderr, "Error while reading byte %d", i);
+      free(locbuf);	
+      return -1;
     }
-	//save local package 
-    buf = gen_pkg(locbuf, buf);
-	free(locbuf);
-	return 1;
+    *(locbuf+i) = aux;
+  }
+  //printf("Read completed.\n");
+  //align data
+  printf("[DEBUG] searching header %s\n",DATA_HEADER);
+  if(serial_align_data(locbuf,buf,size,DATA_HEADER) == -1) {
+    printf("Error while aligning data!\n");
+    return -1;
+  }
+  //save local package 
+  buf = gen_pkg(locbuf, sizeof(buf));
+  free(locbuf);
+  return 1;
 }
 
 /*AA: funzione di scrittura dati verso il server */ 
 int serial_write(int fd, void* buf, size_t size) {
-	uint8_t* b = malloc(size + HEADER_SIZE);
-    char* header = select_header(size);
-    memcpy(b, header, HEADER_SIZE);
-	memcpy(b+HEADER_SIZE, buf, size);
-	int i;
-	for(i=0; i < size; i++) {
-		//send data to server 1 byte per time
-		if(write(fd, b+i, sizeof(uint8_t)) == -1) {
-			fprintf(stderr,"Error while writing byte %d\n",i);
-			free(b);	
-			return -1;
-		}
-	} 
-	//printf("Write completed.\n");
-	free(b);
-	return 1;
+  uint8_t* b = malloc(size + HEADER_SIZE);
+  memcpy(b, INIT_HEADER, HEADER_SIZE);
+  memcpy(b+HEADER_SIZE, buf, size);
+  int i;
+  for(i=0; i < size; i++) {
+    //send data to server 1 byte per time
+    if(write(fd, b+i, sizeof(uint8_t)) == -1) {
+      fprintf(stderr,"Error while writing byte %d\n",i);
+      free(b);	
+      return -1;
+    }
+  } 
+  //printf("Write completed.\n");
+  free(b);
+  return 1;
 }

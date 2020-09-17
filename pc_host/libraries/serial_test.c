@@ -4,14 +4,11 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include "../../common_lib/defs.h"
-#include "serial.h"
+#include "../libraries/serial.h"
 
 //AA test ricezione e invio dati su host
-
-#define AMOUNT_PKGS 5
-//#define PIN 1
+// compile command = gcc -Wall serial_test.c serial.c -o serial_test
 #define EOT 0x1
-
 
 void print_pkg(DataPkg* pkg) {
     if(!pkg)    return;
@@ -21,18 +18,25 @@ void print_pkg(DataPkg* pkg) {
 
 int main(int argc, char** argv) {
 
-    printf("Test serial begin.\nOpening serial connection... ");
+    printf("Test serial begin.\nOpening serial connection... \n");
 
-    int fd = serial_open("/dev/ACM0");
-    if(fd<0) return EXIT_FAILURE;
+    int fd = serial_open("/dev/ttyACM0");
+    if(fd<0){
+      printf("failed to open serial\n");
+      return EXIT_FAILURE;
+    }
     int res_set = serial_set(fd, 115200, 'N');
-    if(res_set == -1) return EXIT_FAILURE;
+    if(res_set == -1){
+      printf("failed to set serial\n");
+      return EXIT_FAILURE;
+    }
     printf("Done.\n");
 
+    /*
     //random values
-    static int* freqs [AMOUNT_PKGS] = {500, 700, 1000, 250, 300};
-    static int* channels[AMOUNT_PKGS] = {1, 2, 5, 7, 8};
-    static int* times[AMOUNT_PKGS] = {4, 5, 8, 1, 10};
+    static uint8_t* freqs [AMOUNT_PKGS] = {500, 700, 1000, 250, 300};
+    static uint8_t* channels[AMOUNT_PKGS] = {1, 2, 5, 7, 8};
+    static uint8_t* times[AMOUNT_PKGS] = {4, 5, 8, 1, 10};
     //write test
     //try to send a bunch of init info
     printf("Creating packages... ");
@@ -52,38 +56,59 @@ int main(int argc, char** argv) {
     for(int i=0; i < AMOUNT_PKGS; i++) {
         InitPkg* p = init_pkgs[i];
         if(serial_write(fd, p, sizeof(InitPkg)) == -1) {
-            fprintf(stderr,"An error occurs on package %d\n", i);
+            fprintf(stderr,"An error occurs on package %d\n");
             return EXIT_FAILURE;
         }
-        printf("Package %d sent to /dev/ACM0\n",i);
+        printf("Package %d sent to /dev/ACM0\n");
     }
     printf("Done.\n");
     //sleep(1);
+    */
+    InitPkg* config_pkg = (InitPkg*)malloc(sizeof(InitPkg));
+    config_pkg->channels = 1;
+    config_pkg->mode = 0;
+    config_pkg->sampling_freq = 10;
+    config_pkg->time = 2;
+    config_pkg->trigger = 0;
+    if(serial_write(fd, config_pkg, sizeof(InitPkg)) == -1) {
+        printf("There is something wrong on the writing...\n");
+        return EXIT_FAILURE;
+    }
 
     //read test
-    int num_data_pkgs = AMOUNT_PKGS*2;
+    int num_data_pkgs = config_pkg->sampling_freq * config_pkg->time;
     DataPkg** data_pkgs = (DataPkg**)malloc(sizeof(DataPkg*) * num_data_pkgs);
     for(int i=0; i < num_data_pkgs; i++) data_pkgs[i] = (DataPkg*)malloc(sizeof(DataPkg));
     //waiting for info from server
     int counter = 0;
     uint8_t cmd = 0;
     while(counter <  num_data_pkgs && cmd != EOT) {
+      printf("trying to read  %d\n",counter);
+      int try = 1;
+      while(serial_read(fd, data_pkgs[counter], sizeof(DataPkg) == -1)){
+	printf("try %d An error occurs while reading from server.\n",try++);
+	
+      }
+      /*
         if(serial_read(fd, data_pkgs[counter], sizeof(DataPkg)) == -1) {
-            perror("An error occurs while reading from server.\n");
-            break;
-            //return EXIT_FAILURE;
-        }
-        print_pkg(data_pkgs[counter]);
-        cmd = data_pkgs[counter]->cmd;
+	perror("An error occurs while reading from server.\n");
+	break;
+	//return EXIT_FAILURE;
+	}
+      */
+      print_pkg(data_pkgs[counter]);
+      cmd = data_pkgs[counter]->cmd;
+      counter++;
     }
 
-    for(int i=0; i < AMOUNT_PKGS; i++)
+    /*
+    for(int i=0; i < num_data_pkgs; i++)
         free(init_pkgs[i]);
+    */
+    free(config_pkg);
     for(int i=0; i < num_data_pkgs; i++)
         free(data_pkgs[i]);
-    free(init_pkgs);
+    //free(init_pkgs);
     free(data_pkgs);
     return 0;
 }
-
-//x compilare: gcc -Wall serial_test.c serial.c -o serial_test

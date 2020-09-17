@@ -113,8 +113,7 @@ void UART_putString(struct UART * uart,uint8_t * buf, size_t size){
   uint8_t * msg = malloc(size+HEADER_SIZE);
   memcpy(msg,DATA_HEADER,HEADER_SIZE);
   memcpy(msg+HEADER_SIZE,buf,size);
-  size+=HEADER_SIZE;
-  for(int i = 0;i<size;i++){
+  for(int i = 0;i<size+HEADER_SIZE;i++){
     UART_putChar(uart, *(msg+i));
   }
   free(msg);
@@ -122,12 +121,12 @@ void UART_putString(struct UART * uart,uint8_t * buf, size_t size){
 
 void UART_putData(struct UART * uart, uint8_t * data, uint32_t data_size, uint8_t data_type){
   //struct data d = fill_data(data,data_size,data_type);
-  uint8_t* b = malloc(data_size + HEADER_SIZE);
-  memcpy(b, DATA_HEADER, HEADER_SIZE);
-  memcpy(b+HEADER_SIZE, data, data_size);
-  UART_putString(uart,&b,data_size + HEADER_SIZE);
+  uint8_t* b = malloc(data_size);
+  memcpy(b, data, data_size);
+  UART_putString(uart,&b,data_size);
   free(b);
 }
+
 
 uint8_t UART_getData(struct UART * uart, uint8_t * buf, size_t data_size){
   ATOMIC_BLOCK(ATOMIC_FORCEON){
