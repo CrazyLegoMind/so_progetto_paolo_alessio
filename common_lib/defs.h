@@ -1,17 +1,21 @@
 #ifndef DEFS_H
 #define DEFS_H
 
-#define PKG_SIZE 2816
-
 //AA: header per allineamento dati
-#define DATA_HEADER "DataHeader"
-#define INIT_HEADER "InitHeader"
-#define HEADER_SIZE 11              //valida per entrambi gli header
+#define HEADER "Oscilloscopio"
+#define HEADER_SIZE strlen(HEADER)
+#define MAX_DATA 32
 
-#define SERVER_MSG_HEADER "ServerMsgHeader"
-#define SERVER_MSG_HEADER_SIZE 16
+typedef struct _data{
+  uint32_t data_size;
+  uint8_t data_type;
+  uint8_t data[MAX_DATA];
+} Data;
+
+
 
 //AA: struttura pacchetto (11 bytes = 2816 bits)
+#define TYPE_DATAPKG 1
 typedef struct _data_pkg {
   uint32_t checksum;                  // controllo integrità dati, generato dal server
   uint16_t data;                      // valore misurato
@@ -33,6 +37,7 @@ int first_pkg;                      // indice del primo blocco disponibile per u
 */
 
 //AA: struttura che setta il server secondo i valori forniti dall'utente
+#define TYPE_INITPKG 0
 typedef struct _init_pkg {
   uint8_t sampling_freq;
   uint8_t channels;
@@ -43,10 +48,10 @@ typedef struct _init_pkg {
 
 
 //AA: messaggio di debug per atmega
-typedef struct server_msg_ {
-  char* header; //= SERVER_MSG_HEADER;
-  char* text;
-  size_t text_size;
-} server_msg;
+#define TYPE_TEXTPKG 2
+typedef struct _text_pkg {
+  char text[20];
+  uint8_t text_size; //max 20
+} TextPkg;
 
 #endif

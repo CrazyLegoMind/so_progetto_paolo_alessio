@@ -29,10 +29,10 @@ BINS=main_server.elf
 
 # put here the additional .o files you want to generate
 # one .c file for each .o should be present
-OBJS= libraries/adc.o libraries/uart.o libraries/timer_interrupt.o
+OBJS= libraries/adc.o libraries/uart.o libraries/timer_interrupt.o ../common_lib/serial_utils.o
 
 # put here the additional header files needed for compilation
-HEADERS= libraries/adc.h libraries/uart.h libraries/timer_interrupt.h ../common_lib/defs.h libraries/buffer_utils.h
+HEADERS= libraries/adc.h libraries/uart.h libraries/timer_interrupt.h ../common_lib/defs.h ../common_lib/serial_utils.h  libraries/buffer_utils.h
 
 
 # the file below contains the actual rules

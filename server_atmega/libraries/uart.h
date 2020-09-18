@@ -9,7 +9,9 @@
 #include <stdlib.h>
 #include <avr/interrupt.h>
 #include <util/atomic.h>
+#include "buffer_utils.h"
 #include "../../common_lib/defs.h"
+#include "../../common_lib/serial_utils.h"
 
 #ifdef _RENAME_UART_
 #define UART UART_
