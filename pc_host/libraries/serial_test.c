@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
       printf("failed to open serial\n");
       return EXIT_FAILURE;
     }
-    int res_set = serial_set(fd, 115200, 0);
+    int res_set = serial_set(fd, 57600, 0);
     if(res_set == -1){
       printf("failed to set serial\n");
       return EXIT_FAILURE;
@@ -73,13 +73,12 @@ int main(int argc, char** argv) {
     config_pkg->sampling_freq = 10;
     config_pkg->time = 2;
     config_pkg->trigger = 0;
-    for(int tr = 0; tr < 3; tr++){
-      if(serial_write(fd, config_pkg, sizeof(InitPkg)) == -1) {
-        printf("There is something wrong on the writing...\n");
-        return EXIT_FAILURE;
-      }
+    if(serial_write(fd, config_pkg, sizeof(InitPkg)) == -1) {
+      printf("There is something wrong on the writing...\n");
+      return EXIT_FAILURE;
     }
-    serial_write(fd,"0000000000",10);
+
+    //serial_write(fd,"0000000000",10);
     //read test
     int num_data_pkgs = config_pkg->sampling_freq * config_pkg->time;
     DataPkg** data_pkgs = (DataPkg**)malloc(sizeof(DataPkg*) * num_data_pkgs);

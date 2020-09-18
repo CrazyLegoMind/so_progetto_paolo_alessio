@@ -93,10 +93,6 @@ static DataPkg* gen_pkg(uint8_t* buf, size_t bufsize) {
   return pkg;
 }
 
-//da modificare
-static char* select_header(size_t dim) {
-  return (dim == 11 ? DATA_HEADER : INIT_HEADER);
-}
 
 /*AA: funzione per allineamento dati riicevuti dalla seriale
   -src: puntatore ad area da esaminare
@@ -173,7 +169,7 @@ int serial_write(int fd, void* buf, size_t size) {
   size += HEADER_SIZE;
   printf("DATA sent with size %d: ",size);
   for(i = 0; i < size; i++){
-    printf("%c",b[i]);
+    printf("%hhx",b[i]);
   }
   printf("\n");
   for(i=0; i < size; i++) {

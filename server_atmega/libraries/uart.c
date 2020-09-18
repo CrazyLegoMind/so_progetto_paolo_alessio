@@ -123,7 +123,7 @@ void UART_putData(struct UART * uart, uint8_t * data, uint32_t data_size, uint8_
   //struct data d = fill_data(data,data_size,data_type);
   uint8_t* b = malloc(data_size);
   memcpy(b, data, data_size);
-  UART_putString(uart,&b,data_size);
+  UART_putString(uart,b,data_size);
   free(b);
 }
 
