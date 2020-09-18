@@ -32,7 +32,7 @@ BINS=main_server.elf
 OBJS= libraries/adc.o libraries/uart.o libraries/timer_interrupt.o
 
 # put here the additional header files needed for compilation
-HEADERS= libraries/adc.h libraries/uart.h libraries/timer_interrupt.h ../common_lib/defs.h
+HEADERS= libraries/adc.h libraries/uart.h libraries/timer_interrupt.h ../common_lib/defs.h libraries/buffer_utils.h
 
 
 # the file below contains the actual rules

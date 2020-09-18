@@ -15,7 +15,7 @@
 #define UART UART_
 #endif
 
-#define BAUD 115200
+#define BAUD 57600
 #define MYUBRR (F_CPU/16/BAUD-1)
 
 struct UART;

@@ -95,13 +95,10 @@ int main(int argc, char** argv) {
 
     //AA: spazio per ricezione InitPkg e invio dati (in buffered mode)
     InitPkg pkg;
-    char buffer_data[MAX_SERVER_STORAGE];
-    uint8_t buffer_init[sizeof(InitPkg)+1];
-    buffer_init[sizeof(InitPkg)] = '\0';
 
     struct UART* uart_fd = UART_init();
     //AA: waiting InitPkg from host
-    while(!UART_getData(uart_fd, buffer_init, sizeof(buffer_init)));
+    while(!UART_getData(uart_fd, (uint8_t*)&pkg , sizeof(InitPkg)));
     //some examples
     /*
       if(buffer_init == NULL) {
@@ -120,7 +117,7 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     //*/
-    memcpy(&pkg, &buffer_init[0], sizeof(buffer_init));
+    //memcpy(&pkg, &buffer_init[0], sizeof(buffer_init));
 
     //PDGZ
     //get data from packet to set server
@@ -173,8 +170,10 @@ int main(int argc, char** argv) {
     //sampling data 
 
     //send data to host
+    
     while(1){
        UART_putString(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg));
     }
+    
     return EXIT_SUCCESS;
 }
