@@ -7,7 +7,7 @@
 #include "../libraries/serial.h"
 
 //AA test ricezione e invio dati su host
-// compile command = gcc -Wall serial_test.c serial.c -o serial_test
+// compile command =  gcc -Wall serial_test.c serial.c ../../common_lib/serial_utils.c -o serial_test
 #define EOT 0x1
 
 void print_pkg(DataPkg* pkg) {
@@ -67,32 +67,42 @@ int main(int argc, char** argv) {
     printf("Done.\n");
     //sleep(1);
     */
-    InitPkg* config_pkg = (InitPkg*)malloc(sizeof(InitPkg));
-    config_pkg->channels = 1;
-    config_pkg->mode = 0;
-    config_pkg->sampling_freq = 10;
-    config_pkg->time = 2;
-    config_pkg->trigger = 0;
-    if(serial_write(fd, config_pkg, sizeof(InitPkg)) == -1) {
-      printf("There is something wrong on the writing...\n");
-      return EXIT_FAILURE;
-    }
+    InitPkg config_pkg;
+    config_pkg.channels = 1;
+    config_pkg.mode = 0;
+    config_pkg.sampling_freq = 10;
+    config_pkg.time = 2;
+    config_pkg.trigger = 0;
+    serial_send_data(fd, (uint8_t*)&config_pkg, sizeof(InitPkg),TYPE_INITPKG);
 
     //serial_write(fd,"0000000000",10);
     //read test
-    int num_data_pkgs = config_pkg->sampling_freq * config_pkg->time;
+    int num_data_pkgs = config_pkg.sampling_freq * config_pkg.time;
     DataPkg** data_pkgs = (DataPkg**)malloc(sizeof(DataPkg*) * num_data_pkgs);
     for(int i=0; i < num_data_pkgs; i++) data_pkgs[i] = (DataPkg*)malloc(sizeof(DataPkg));
     //waiting for info from server
     int counter = 0;
     uint8_t cmd = 0;
+
+    Data* data_received;
     while(counter <  num_data_pkgs && cmd != EOT) {
       printf("trying to read  %d\n",counter);
       int try = 1;
-      while(serial_read(fd, data_pkgs[counter], sizeof(DataPkg)) == -1){
+      while(serial_read(fd,(uint8_t*) data_received, sizeof(Data)) == -1){
 	printf("try %d An error occurs while reading from server.\n",try++);
 	
       }
+      if(data_received->data_type == TYPE_DATAPKG){
+	serial_extract_data(data_received,data_pkgs[counter],sizeof(DataPkg));
+	print_pkg(data_pkgs[counter]);
+	cmd = data_pkgs[counter]->cmd;
+	counter++;
+      }else if(data_received->data_type == TYPE_TEXTPKG){
+	TextPkg* t = malloc(sizeof(TextPkg));
+	serial_extract_data(data_received,(uint8_t*)t,sizeof(TextPkg));
+	printf("[MSG] %s", t->text);
+      }
+
       /*
         if(serial_read(fd, data_pkgs[counter], sizeof(DataPkg)) == -1) {
 	perror("An error occurs while reading from server.\n");
@@ -100,16 +110,13 @@ int main(int argc, char** argv) {
 	//return EXIT_FAILURE;
 	}
       */
-      print_pkg(data_pkgs[counter]);
-      cmd = data_pkgs[counter]->cmd;
-      counter++;
+
     }
 
     /*
     for(int i=0; i < num_data_pkgs; i++)
         free(init_pkgs[i]);
     */
-    free(config_pkg);
     for(int i=0; i < num_data_pkgs; i++)
         free(data_pkgs[i]);
     //free(init_pkgs);

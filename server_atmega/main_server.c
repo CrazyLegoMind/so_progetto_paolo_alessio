@@ -170,9 +170,12 @@ int main(int argc, char** argv) {
     //sampling data 
 
     //send data to host
-    
+    int test_epoch = 0;
     while(1){
+      pkg_temp.timestamp = test_epoch;
+      test_epoch++;
        UART_putString(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg));
+       _delay_ms(1000);
     }
     
     return EXIT_SUCCESS;
