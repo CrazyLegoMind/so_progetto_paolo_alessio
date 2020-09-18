@@ -10,6 +10,12 @@
 // compile command =  gcc -Wall serial_test.c serial.c ../../common_lib/serial_utils.c -o serial_test
 #define EOT 0x1
 
+
+//global var
+Data* data_received;
+
+
+
 void print_pkg(DataPkg* pkg) {
     if(!pkg)    return;
     fprintf(stdout,"Package information:\nChecksum: " PRIu32 "\nSignal: " PRIu16 "\nPin: %hhu\nCommand: %hhu\nEpoch: %d\n\n", pkg->checksum, pkg->data, pkg->mask_pin, pkg->cmd, pkg->timestamp);
@@ -32,7 +38,6 @@ int main(int argc, char** argv) {
     }
     serial_set_blocking(fd,1);
     sleep(1);
-
     printf("Done.\n");
 
     /*
@@ -67,6 +72,9 @@ int main(int argc, char** argv) {
     printf("Done.\n");
     //sleep(1);
     */
+
+    
+    data_received = malloc(sizeof(Data));
     InitPkg config_pkg;
     config_pkg.channels = 1;
     config_pkg.mode = 0;
@@ -84,7 +92,6 @@ int main(int argc, char** argv) {
     int counter = 0;
     uint8_t cmd = 0;
 
-    Data* data_received;
     while(counter <  num_data_pkgs && cmd != EOT) {
       printf("trying to read  %d\n",counter);
       int try = 1;
@@ -93,14 +100,17 @@ int main(int argc, char** argv) {
 	
       }
       if(data_received->data_type == TYPE_DATAPKG){
-	serial_extract_data(data_received,data_pkgs[counter],sizeof(DataPkg));
+	serial_extract_data(data_received,(uint8_t*)data_pkgs[counter],sizeof(DataPkg));
 	print_pkg(data_pkgs[counter]);
 	cmd = data_pkgs[counter]->cmd;
 	counter++;
       }else if(data_received->data_type == TYPE_TEXTPKG){
 	TextPkg* t = malloc(sizeof(TextPkg));
 	serial_extract_data(data_received,(uint8_t*)t,sizeof(TextPkg));
-	printf("[MSG] %s", t->text);
+	char* txt = t ->text;
+	printf("[MSG] on with size %d:  ", t->text_size);
+	for(int c = 0; c < t->text_size;c++) printf("%c", txt[c]);
+	printf("\n");
       }
 
       /*
@@ -121,5 +131,6 @@ int main(int argc, char** argv) {
         free(data_pkgs[i]);
     //free(init_pkgs);
     free(data_pkgs);
+    free(data_received);
     return 0;
 }

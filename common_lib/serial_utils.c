@@ -44,7 +44,10 @@ Data serial_wrap_data(uint8_t * data, uint32_t data_size, uint8_t data_type){
 }
 
 void serial_extract_data(Data * src, uint8_t * dest, uint32_t data_size){
-  if(src->data_size!=data_size)return;
+  if(src->data_size!=data_size){
+    printf("extracr error: size mismatch %d != %d\n", src->data_size, data_size);
+    return;
+  }
   for(uint16_t i = 0; i<src->data_size; i++){
     *dest=src->data[i];
     dest++;

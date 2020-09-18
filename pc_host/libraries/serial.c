@@ -78,7 +78,7 @@ void serial_set_blocking(int fd, int should_block) {
   -buf: riferimento all'oggetto che si vuole leggere
   -size: quanto si vuole leggere dal server
 */ 
-int serial_read(int fd, void* buf, size_t size) {
+int serial_read(int fd, uint8_t* buf, size_t size) {
   size += HEADER_SIZE;
   uint8_t* locbuf = malloc(size);
   uint8_t aux;

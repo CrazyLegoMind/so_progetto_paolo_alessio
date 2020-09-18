@@ -15,7 +15,7 @@
 int serial_set(int fd, int speed, int parity);
 int serial_open(const char* path);
 void serial_set_blocking(int fd, int should_block);
-int serial_read(int fd, void* buf, size_t size);
+int serial_read(int fd, uint8_t* buf, size_t size);
 int serial_write(int fd, void* buf, size_t size);
 void serial_send_data(int fd, uint8_t * data, uint32_t data_size, uint8_t data_type);
 

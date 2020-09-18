@@ -51,7 +51,7 @@ typedef struct _init_pkg {
 #define TYPE_TEXTPKG 2
 typedef struct _text_pkg {
   char text[20];
-  size_t text_size; //max 20
+  uint8_t text_size; //max 20
 } TextPkg;
 
 #endif
