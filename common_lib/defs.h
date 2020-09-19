@@ -54,4 +54,11 @@ typedef struct _text_pkg {
   uint8_t text_size; //max 20
 } TextPkg;
 
+
+//AA: pacchetto vuoto
+#define TYPE_EMPTYPKG 3
+typedef struct _empty_pkg {
+  char blank[20];
+  size_t size;
+} EmptyPkg;
 #endif

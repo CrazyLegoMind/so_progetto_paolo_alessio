@@ -1,5 +1,6 @@
 #include "serial_utils.h"
-
+#include "defs.h"
+#include <stdint.h>
 
 int serial_align_data(uint8_t* src, uint8_t* dest, size_t size) {
     uint8_t* tmp = malloc(size*2);
@@ -52,4 +53,28 @@ void serial_extract_data(Data * src, uint8_t * dest, uint32_t data_size){
     *dest=src->data[i];
     dest++;
   }
+}
+
+//AA
+void print_pkg(Data* d) {
+  switch(d->data_type):
+      case TYPE_DATAPKG:
+        DataPkg* pkg = malloc(sizeof(DataPkg));
+        serial_extract_data(d, (DataPkg*)&p, sizeof(DataPkg));
+        fprintf(stdout,"Data Package info:\nChecksum: %" PRIu32 "\nSignal: %" PRIu16 "\nPin: %hhu\nCommand: %hhu\nEpoch: %d\n\n", pkg->checksum, pkg->data, pkg->mask_pin, pkg->cmd, pkg->timestamp);
+        break;
+      case TYPE_INITPKG:
+        InitPkg* pkg = malloc(sizeof(InitPkg));
+        serial_extract_data(d, (InitPkg*)&p, sizeof(InitPkg));
+        fprintf(stdout,"Init Package info:\nFrequency: %c\nChannels: %c\nMode: %c\nTime: %c\nTrigger: %d\n\n", pkg->sampling_freq, pkg->channels, pkg->mode, pkg->time, pkg->trigger);
+        break;
+      case TYPE_TEXTPKG:
+        TextPkg* pkg = malloc(sizeof(TextPkg));
+        serial_extract_data(d, (TextPkg*)&p, sizeof(TextPkg));
+        fprintf(stdout,"Text Package info:\nText: %s\nSize: %c\n\n", pkg->text, pkg->size);
+        break;
+      case TYPE_EMPTYPKG:
+        fprintf(stdout,"Blank package.\n");
+        break;
+  return;
 }
