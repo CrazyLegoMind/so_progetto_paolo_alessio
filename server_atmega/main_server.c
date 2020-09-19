@@ -92,7 +92,17 @@ int main(int argc, char** argv) {
   while(1){
     //AA: waiting InitPkg from host
     if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1){
+      
+      TextPkg packet;
+      memcpy(packet.text,"msg foundpacket",15);
+      packet.text_size = 15;
+      UART_putData(uart_fd, (uint8_t*) &packet, sizeof(TextPkg),TYPE_TEXTPKG);
+      
       if(data_received.data_type == TYPE_INITPKG){
+	TextPkg packet;
+	memcpy(packet.text,"msg INIT packet",15);
+	packet.text_size = 15;
+	UART_putData(uart_fd, (uint8_t*) &packet, sizeof(TextPkg),TYPE_TEXTPKG);
 	InitPkg pkg;
 	serial_extract_data(&data_received,(uint8_t*)&pkg,sizeof(InitPkg));
       	uint8_t mode = pkg.mode; //data
@@ -144,11 +154,13 @@ int main(int argc, char** argv) {
 	;
       }
     }else{
+      /*
       TextPkg packet;
       memcpy(packet.text,"error no packet",15);
       packet.text_size = 15;
       UART_putData(uart_fd, (uint8_t*) &packet, sizeof(TextPkg),TYPE_TEXTPKG);
-      _delay_ms(1000);
+      _delay_ms(100);
+      */
     }
   }
   return EXIT_SUCCESS;

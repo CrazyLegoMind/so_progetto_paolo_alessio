@@ -1,12 +1,11 @@
 #include "uart.h"
-/*
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <string.h>
 #include <util/atomic.h>
 #include "buffer_utils.h"
 #include "../../common_lib/defs.h"
-*/
+
 
 #define UART_BUFFER_SIZE 256
 

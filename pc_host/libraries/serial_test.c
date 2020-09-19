@@ -81,8 +81,9 @@ int main(int argc, char** argv) {
     config_pkg.sampling_freq = 10;
     config_pkg.time = 2;
     config_pkg.trigger = 0;
-    serial_send_data(fd, (uint8_t*)&config_pkg, sizeof(InitPkg),TYPE_INITPKG);
-
+    for(int tr= 0; tr <10; tr++){
+      serial_send_data(fd, (uint8_t*)&config_pkg, sizeof(InitPkg),TYPE_INITPKG);
+    }
     //serial_write(fd,"0000000000",10);
     //read test
     int num_data_pkgs = config_pkg.sampling_freq * config_pkg.time;
