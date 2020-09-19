@@ -112,6 +112,8 @@ int main(int argc, char** argv) {
 	printf("[MSG] on with size %d:  ", t->text_size);
 	for(int c = 0; c < t->text_size;c++) printf("%c", txt[c]);
 	printf("\n");
+      }else if(data_received->data_type == TYPE_INITPKG){
+	printf("received echo packet");
       }
 
       /*

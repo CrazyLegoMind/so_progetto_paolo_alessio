@@ -63,6 +63,7 @@ uint8_t channels_list[8] = {8,8,8,8,8,8,8,8};
 volatile uint8_t interrupt_occurred = 0;
 uint16_t readings_done = 0;
 DataPkg  pkg_temp;
+Data data_received;
 
 
 ISR(TIMER_INTERRUPT){
@@ -83,28 +84,23 @@ ISR(TIMER_INTERRUPT){
 
 
 int main(int argc, char** argv) {
-
-  //AA: spazio per ricezione InitPkg e invio dati (in buffered mode)
-  Data data_received;
-
+  
   struct UART* uart_fd = UART_init();
   sei();
+  _delay_ms(100);
   while(1){
-    //AA: waiting InitPkg from host
-    if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1){
-      
-      TextPkg packet;
-      memcpy(packet.text,"msg foundpacket",15);
-      packet.text_size = 15;
-      UART_putData(uart_fd, (uint8_t*) &packet, sizeof(TextPkg),TYPE_TEXTPKG);
-      
+    if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1){   
       if(data_received.data_type == TYPE_INITPKG){
-	TextPkg packet;
-	memcpy(packet.text,"msg INIT packet",15);
-	packet.text_size = 15;
-	UART_putData(uart_fd, (uint8_t*) &packet, sizeof(TextPkg),TYPE_TEXTPKG);
 	InitPkg pkg;
+	TextPkg msg;
+	memcpy(msg.text,"found init packet",sizeof("found init packet"));
+	msg.text_size = sizeof("found init packet");
+	UART_putData(uart_fd, (uint8_t*) &msg, sizeof(TextPkg),TYPE_TEXTPKG);
+	_delay_ms(100);
+	
 	serial_extract_data(&data_received,(uint8_t*)&pkg,sizeof(InitPkg));
+	UART_putData(uart_fd, (uint8_t*) &pkg, sizeof(InitPkg),TYPE_INITPKG);
+	_delay_ms(100);
       	uint8_t mode = pkg.mode; //data
 	uint8_t sampling_freq = pkg.sampling_freq; //hz
 	uint8_t channels_mask = pkg.channels; //channel mask
