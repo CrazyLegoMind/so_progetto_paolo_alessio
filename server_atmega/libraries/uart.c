@@ -1,10 +1,12 @@
 #include "uart.h"
+/*
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <string.h>
 #include <util/atomic.h>
 #include "buffer_utils.h"
 #include "../../common_lib/defs.h"
+*/
 
 #define UART_BUFFER_SIZE 256
 
@@ -111,7 +113,7 @@ ISR(USART0_UDRE_vect){
 
 void UART_putString(struct UART * uart,uint8_t * buf, size_t size){
   uint8_t * msg = malloc(size+HEADER_SIZE);
-  memcpy(msg,DATA_HEADER,HEADER_SIZE);
+  memcpy(msg,HEADER,HEADER_SIZE);
   memcpy(msg+HEADER_SIZE,buf,size);
   for(int i = 0;i<size+HEADER_SIZE;i++){
     UART_putChar(uart, *(msg+i));
@@ -120,11 +122,8 @@ void UART_putString(struct UART * uart,uint8_t * buf, size_t size){
 }
 
 void UART_putData(struct UART * uart, uint8_t * data, uint32_t data_size, uint8_t data_type){
-  //struct data d = fill_data(data,data_size,data_type);
-  uint8_t* b = malloc(data_size);
-  memcpy(b, data, data_size);
-  UART_putString(uart,&b,data_size);
-  free(b);
+  Data d = serial_wrap_data(data,data_size,data_type);
+  UART_putString(uart,(uint8_t*) &d,data_size);
 }
 
 
@@ -136,11 +135,11 @@ uint8_t UART_getData(struct UART * uart, uint8_t * buf, size_t data_size){
 
     for(i = 0;i<internal_buffer_size;i++){
       //Seraching for header head
-      for(k=0;k<strlen(INIT_HEADER);k++){
-        if(uart->rx_buffer[(i+k)%internal_buffer_size]!=INIT_HEADER[k])
+      for(k=0;k<strlen(HEADER);k++){
+        if(uart->rx_buffer[(i+k)%internal_buffer_size]!=HEADER[k])
           break;
       }
-      if(k==strlen(INIT_HEADER))//Data start at index i
+      if(k==strlen(HEADER))//Data start at index i
       {
         i = (i+k)%internal_buffer_size;//I contains first index of data
         if(uart->rx_end < i+data_size)

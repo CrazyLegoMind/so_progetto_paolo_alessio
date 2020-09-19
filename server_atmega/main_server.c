@@ -11,6 +11,7 @@
 #include "libraries/adc.h"
 #include "libraries/uart.h"
 #include "libraries/timer_interrupt.h"
+#include "../common_lib/serial_utils.h"
 #include "../common_lib/defs.h"
 
 
@@ -39,18 +40,8 @@ typedef struct _data_pkg {
 //Da host dobbiamo sapere quale modalità adottare, quindi in primis ricevo il pacchetto di configurazione
 //a seconda del valore letto procedo all'invio continuous o buffered
 
-//#define SERVER_MSG_HEADER "ServerMsgHeader"
-#define MAX_SERVER_STORAGE 1024                 //1K bytes = 10 pacchetti circa
 
 
-//AA: invia messaggi lato server da stampare su host 
-static void print_server_to_host(struct UART* uart, server_msg* msg) {
-    assert(msg->text_size > 0);
-    UART_putString(uart, msg->header, sizeof(msg->header));
-    _delay_ms(100);         //do tempo al modulo host di elaborare l'informazione
-    UART_putString(uart, msg->text, msg->text_size);
-    return;
-}
 
 /* alternativa
 static void print_server_to_host2(struct UART* uart, const char* txt, size_t size) {
@@ -93,88 +84,72 @@ ISR(TIMER_INTERRUPT){
 
 int main(int argc, char** argv) {
 
-    //AA: spazio per ricezione InitPkg e invio dati (in buffered mode)
-    InitPkg pkg;
-    char buffer_data[MAX_SERVER_STORAGE];
-    uint8_t buffer_init[sizeof(InitPkg)+1];
-    buffer_init[sizeof(InitPkg)] = '\0';
+  //AA: spazio per ricezione InitPkg e invio dati (in buffered mode)
+  Data data_received;
 
-    struct UART* uart_fd = UART_init();
+  struct UART* uart_fd = UART_init();
+  sei();
+  while(1){
     //AA: waiting InitPkg from host
-    while(!UART_getData(uart_fd, buffer_init, sizeof(buffer_init)));
-    //some examples
-    /*
-      if(buffer_init == NULL) {
-        server_msg* msg1 = malloc(sizeof(server_msg));
-        msg1->text = "Error while receveing init pkg";
-        msg1->text_size = sizeof(msg1->text);
-        print_server_to_host(uart_fd, msg1);
-        free(msg1);
-        return EXIT_FAILURE;
-    } else if(strlen(buffer_init) < 11) { 
-        server_msg* msg2 = malloc(sizeof(server_msg));
-        msg2->text = "Package not completed";
-        msg2->text_size = sizeof(msg2->text);
-        print_server_to_host(uart_fd, msg2);
-        free(msg2);
-        return EXIT_FAILURE;
-    }
-    //*/
-    memcpy(&pkg, &buffer_init[0], sizeof(buffer_init));
+    if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1){
+      if(data_received.data_type == TYPE_INITPKG){
+	InitPkg pkg;
+	serial_extract_data(&data_received,(uint8_t*)&pkg,sizeof(InitPkg));
+      	uint8_t mode = pkg.mode; //data
+	uint8_t sampling_freq = pkg.sampling_freq; //hz
+	uint8_t channels_mask = pkg.channels; //channel mask
+	uint8_t time = pkg.time;   //seconds
+	int trigger = pkg.trigger; //adc reading
+	uint16_t readings_todo = sampling_freq*time;
+	if(!mode) {
+	  //continuous
 
-    //PDGZ
-    //get data from packet to set server
-    uint8_t mode = pkg.mode; //data
-    uint8_t sampling_freq = pkg.sampling_freq; //hz
-    uint8_t channels_mask = pkg.channels; //channel mask
-    uint8_t time = pkg.time;   //seconds
-    int trigger = pkg.trigger; //adc reading
-    uint16_t readings_todo = sampling_freq*time;
-    if(!mode) {
-        //continuous
+	  //inizializzo la lista dei canali da leggere con l'adc
+	  //la lista avrà i canali da leggere all'inizio e tutti
+	  // 8 nelle rimanenti posizioni vuote, es voglio leggere
+	  // 2 e 4 list= [2,4,8,8,8,8,8,8]
+	  int p = 0,e = 7;
+	  for (int i = 0; i < 8; i++){
+	    if(channels_mask & 1 << i){
+	      channels_list[p] = i;
+	      p++;
+	    }else{
+	      channels_list[e] = 8;
+	      e--;
+	    }
+	  }
+	  //pulisco il temp pkg
+	  pkg_temp.checksum = 0;
+	  pkg_temp.data = 0;
+	  pkg_temp.mask_pin = 0;
+	  pkg_temp.cmd = 0;
+	  pkg_temp.timestamp  = 0;
+	  //pkg_temp. = 0;
+	  TIMER_set_frequency(sampling_freq);
+	  TIMER_enable_interrupt(1);
+	  while(readings_done < readings_todo){
+	    if (interrupt_occurred){
+	      UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
+	      interrupt_occurred = 0;
+	    }
+	  }
+	  TIMER_enable_interrupt(0);
 
-      //inizializzo la lista dei canali da leggere con l'adc
-      //la lista avrà i canali da leggere all'inizio e tutti
-      // 8 nelle rimanenti posizioni vuote, es voglio leggere
-      // 2 e 4 list= [2,4,8,8,8,8,8,8]
-      int p = 0,e = 7;
-      for (int i = 0; i < 8; i++){
-        if(channels_mask & 1 << i){
-          channels_list[p] = i;
-          p++;
-        }else{
-          channels_list[e] = 8;
-          e--;
-        }
-      }
-      //pulisco il temp pkg
-      pkg_temp.checksum = 0;
-      pkg_temp.data = 0;
-      pkg_temp.mask_pin = 0;
-      pkg_temp.cmd = 0;
-      pkg_temp.timestamp  = 0;
-      //pkg_temp. = 0;
-      TIMER_set_frequency(sampling_freq);
-      TIMER_enable_interrupt(1);
-      while(readings_done < readings_todo){
-	if (interrupt_occurred){
-	  UART_putString(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg));
-
+	} else {
+	  //buffered
 
 	}
+      }else{
+	//data type non riconosciuto
+	;
       }
-      TIMER_enable_interrupt(0);
-
-    } else {
-        //buffered
-
+    }else{
+      TextPkg packet;
+      memcpy(packet.text,"error no packet",15);
+      packet.text_size = 15;
+      UART_putData(uart_fd, (uint8_t*) &packet, sizeof(TextPkg),TYPE_TEXTPKG);
+      _delay_ms(1000);
     }
-
-    //sampling data 
-
-    //send data to host
-    while(1){
-       UART_putString(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg));
-    }
-    return EXIT_SUCCESS;
+  }
+  return EXIT_SUCCESS;
 }
