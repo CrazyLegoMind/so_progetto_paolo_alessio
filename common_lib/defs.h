@@ -54,4 +54,6 @@ typedef struct _text_pkg {
   uint8_t text_size; //max 20
 } TextPkg;
 
+#define TYPE_EMPTYPKG 3
+
 #endif

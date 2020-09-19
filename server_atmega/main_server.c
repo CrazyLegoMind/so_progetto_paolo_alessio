@@ -82,6 +82,14 @@ ISR(TIMER_INTERRUPT){
   interrupt_occurred = 1;
 }
 
+void send_msg(struct UART* fd,char*  message, size_t size){
+  TextPkg pkg_msg;
+  memcpy(pkg_msg.text,message,size);
+  pkg_msg.text_size = size;
+  UART_putData(fd, (uint8_t*) &pkg_msg, sizeof(TextPkg),TYPE_TEXTPKG);
+  _delay_ms(100);
+}
+
 
 int main(int argc, char** argv) {
   
@@ -89,23 +97,24 @@ int main(int argc, char** argv) {
   sei();
   _delay_ms(100);
   while(1){
-    if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1){   
+    if(UART_getData(uart_fd, (uint8_t*)&data_received ,40) == 1){   
       if(data_received.data_type == TYPE_INITPKG){
-	InitPkg pkg;
-	TextPkg msg;
-	memcpy(msg.text,"found init packet",sizeof("found init packet"));
-	msg.text_size = sizeof("found init packet");
-	UART_putData(uart_fd, (uint8_t*) &msg, sizeof(TextPkg),TYPE_TEXTPKG);
+	InitPkg* pkg = malloc(10);
+	send_msg(uart_fd,"found init pkg",sizeof("found init pkg"));
+	
+	serial_extract_data(&data_received,(uint8_t*)pkg,8);
+	send_msg(uart_fd,"extracted pkg",sizeof("extracted pkg"));
+	
+	UART_putData(uart_fd, (uint8_t*)pkg, 8,TYPE_INITPKG);
 	_delay_ms(100);
 	
-	serial_extract_data(&data_received,(uint8_t*)&pkg,sizeof(InitPkg));
-	UART_putData(uart_fd, (uint8_t*) &pkg, sizeof(InitPkg),TYPE_INITPKG);
-	_delay_ms(100);
-      	uint8_t mode = pkg.mode; //data
-	uint8_t sampling_freq = pkg.sampling_freq; //hz
-	uint8_t channels_mask = pkg.channels; //channel mask
-	uint8_t time = pkg.time;   //seconds
-	int trigger = pkg.trigger; //adc reading
+	send_msg(uart_fd,"sent init pkg",sizeof("sent init pkg"));
+	
+      	uint8_t mode = pkg->mode; //data
+	uint8_t sampling_freq = pkg->sampling_freq; //hz
+	uint8_t channels_mask = pkg->channels; //channel mask
+	uint8_t time = pkg->time;   //seconds
+	int trigger = pkg->trigger; //adc reading
 	uint16_t readings_todo = sampling_freq*time;
 	if(!mode) {
 	  //continuous
