@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "defs.h"
 
 int serial_align_data(uint8_t* src, uint8_t* dest, size_t size);

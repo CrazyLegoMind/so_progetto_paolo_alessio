@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include "../../common_lib/defs.h"
+#include "../../common_lib/serial_utils.h"
 #include "../libraries/serial.h"
 
 //AA test ricezione e invio dati su host
@@ -18,7 +19,7 @@ Data* data_received;
 
 void print_pkg(DataPkg* pkg) {
     if(!pkg)    return;
-    fprintf(stdout,"Package information:\nChecksum: " PRIu32 "\nSignal: " PRIu16 "\nPin: %hhu\nCommand: %hhu\nEpoch: %d\n\n", pkg->checksum, pkg->data, pkg->mask_pin, pkg->cmd, pkg->timestamp);
+    fprintf(stdout,"Package information:\nChecksum: %" PRIu32 "\nSignal: %" PRIu16 "\nPin: %hhu\nCommand: %hhu\nEpoch: %d\n\n", pkg->checksum, pkg->data, pkg->mask_pin, pkg->cmd, pkg->timestamp);
     return;
 }
 
@@ -40,6 +41,14 @@ int main(int argc, char** argv) {
     sleep(1);
     printf("Done.\n");
 
+
+    //AA
+    printf("Syncing...");
+    for(int i=0; i < 50; i++) {
+      printf(".");
+      serial_send_data(fd, NULL, 0, TYPE_EMPTYPKG);   //4 = empty 
+    }
+    printf(" Done.\n");
     /*
     //random values
     static uint8_t* freqs [AMOUNT_PKGS] = {500, 700, 1000, 250, 300};
@@ -96,41 +105,41 @@ int main(int argc, char** argv) {
       printf("trying to read  %d\n",counter);
       int try = 1;
       while(serial_read(fd,(uint8_t*) data_received, sizeof(Data)) == -1){
-	printf("try %d An error occurs while reading from server.\n",try++);
-	
+	      printf("try %d An error occurs while reading from server.\n",try++);
       }
+      /*
       if(data_received->data_type == TYPE_DATAPKG){
-	serial_extract_data(data_received,(uint8_t*)data_pkgs[counter],sizeof(DataPkg));
-	print_pkg(data_pkgs[counter]);
-	cmd = data_pkgs[counter]->cmd;
-	counter++;
+        serial_extract_data(data_received,(uint8_t*)data_pkgs[counter],sizeof(DataPkg));
+        print_pkg(data_pkgs[counter]);
+        cmd = data_pkgs[counter]->cmd;
+        counter++;
       }else if(data_received->data_type == TYPE_TEXTPKG){
-	TextPkg* t = malloc(sizeof(TextPkg));
-	serial_extract_data(data_received,(uint8_t*)t,sizeof(TextPkg));
-	char* txt = t ->text;
-	printf("[MSG] on with size %d:  ", t->text_size);
-	for(int c = 0; c < t->text_size;c++) printf("%c", txt[c]);
-	printf("\n");
+        TextPkg* t = malloc(sizeof(TextPkg));
+        serial_extract_data(data_received,(uint8_t*)t,sizeof(TextPkg));
+        char* txt = t ->text;
+        printf("[MSG] on with size %d:  ", t->text_size);
+        for(int c = 0; c < t->text_size;c++) printf("%c", txt[c]);
+        printf("\n");
+      } */
+      print_pkg(data_received);
+      /*
+      if(serial_read(fd, data_pkgs[counter], sizeof(DataPkg)) == -1) {
+        perror("An error occurs while reading from server.\n");
+        break;
+        //return EXIT_FAILURE;
+	    }
+      */
+
       }
 
       /*
-        if(serial_read(fd, data_pkgs[counter], sizeof(DataPkg)) == -1) {
-	perror("An error occurs while reading from server.\n");
-	break;
-	//return EXIT_FAILURE;
-	}
+      for(int i=0; i < num_data_pkgs; i++)
+          free(init_pkgs[i]);
       */
-
-    }
-
-    /*
-    for(int i=0; i < num_data_pkgs; i++)
-        free(init_pkgs[i]);
-    */
-    for(int i=0; i < num_data_pkgs; i++)
-        free(data_pkgs[i]);
-    //free(init_pkgs);
-    free(data_pkgs);
-    free(data_received);
-    return 0;
+      for(int i=0; i < num_data_pkgs; i++)
+          free(data_pkgs[i]);
+      //free(init_pkgs);
+      free(data_pkgs);
+      free(data_received);
+      return 0;
 }
