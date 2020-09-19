@@ -6,6 +6,7 @@
 #include "buffer_utils.h"
 #include "../../common_lib/defs.h"
 
+
 #define UART_BUFFER_SIZE 256
 
 typedef struct UART {
