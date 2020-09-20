@@ -17,11 +17,11 @@ typedef struct _data{
 //AA: struttura pacchetto (11 bytes = 2816 bits)
 #define TYPE_DATAPKG 1
 typedef struct _data_pkg {
-  uint32_t checksum;                  // controllo integrità dati, generato dal server
-  uint16_t data;                      // valore misurato
-  uint8_t mask_pin;                   // pin da dove si legge il valore
-  uint8_t cmd;                        // codice per la gestione dei pacchetti
-  int timestamp;                      // intero che rappresenta l'epoca dei pacchetti
+  uint8_t checksum;                // controllo integrità dati, generato dal server
+  uint8_t data;                    // valore misurato
+  uint8_t mask_pin;                // pin da dove si legge il valore
+  uint8_t cmd;                     // codice per la gestione dei pacchetti
+  uint8_t timestamp;               // intero che rappresenta l'epoca dei pacchetti
 } DataPkg;
 
 /*
@@ -39,19 +39,19 @@ int first_pkg;                      // indice del primo blocco disponibile per u
 //AA: struttura che setta il server secondo i valori forniti dall'utente
 #define TYPE_INITPKG 0
 typedef struct _init_pkg {
-  uint8_t sampling_freq;
-  uint8_t channels;
-  uint8_t mode;
-  uint8_t time;   //seconds
-  int trigger;
+  uint8_t sampling_freq;            //frequenza di campionamento (in Hz)
+  uint8_t channels;                 //quanti canali sono da leggere
+  uint8_t mode;                     //continuous (0) o buffered (1)
+  uint8_t time;                     //seconds
+  int8_t trigger;
 } InitPkg;
 
 
 //AA: messaggio di debug per atmega
 #define TYPE_TEXTPKG 2
 typedef struct _text_pkg {
-  char text[20];
   uint8_t text_size; //max 20
+  uint8_t text[20];
 } TextPkg;
 
 #define TYPE_EMPTYPKG 3

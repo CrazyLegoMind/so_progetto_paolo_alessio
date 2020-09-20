@@ -1,5 +1,6 @@
 #include "serial_utils.h"
-
+#include "defs.h"
+#include <stdint.h>
 
 int serial_align_data(uint8_t* src, uint8_t* dest, size_t size) {
     uint8_t* tmp = malloc(size*2);
@@ -73,7 +74,7 @@ void print_pkg(Data* d){
     printf("printing TEXTPKG\n");
     TextPkg* pkg = malloc(sizeof(TextPkg));
     serial_extract_data(d, (uint8_t*)pkg, sizeof(TextPkg));
-    char* txt = pkg->text;
+    uint8_t* txt = pkg->text;
     fprintf(stdout,"Text Package info: \n text: ");
 
     if(txt){

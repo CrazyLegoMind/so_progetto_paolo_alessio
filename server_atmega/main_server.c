@@ -1,11 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-//#include <fcntl.h>
 #include <string.h>
 #include <assert.h>
 #include <util/delay.h>
-//#include <unistd.h>
 
 //#include "avr/io.h"  //da decommentare se serve o cancellare
 #include "libraries/adc.h"
@@ -97,15 +95,15 @@ int main(int argc, char** argv) {
   sei();
   _delay_ms(100);
   while(1){
-    if(UART_getData(uart_fd, (uint8_t*)&data_received ,40) == 1){   
+    if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1){   
       if(data_received.data_type == TYPE_INITPKG){
-	InitPkg* pkg = malloc(10);
+	InitPkg* pkg = malloc(sizeof(InitPkg));
 	send_msg(uart_fd,"found init pkg",sizeof("found init pkg"));
 	
-	serial_extract_data(&data_received,(uint8_t*)pkg,8);
+	serial_extract_data(&data_received,(uint8_t*)pkg, sizeof(InitPkg));
 	send_msg(uart_fd,"extracted pkg",sizeof("extracted pkg"));
 	
-	UART_putData(uart_fd, (uint8_t*)pkg, 8,TYPE_INITPKG);
+	UART_putData(uart_fd, (uint8_t*)pkg, sizeof(InitPkg), TYPE_INITPKG);
 	_delay_ms(100);
 	
 	send_msg(uart_fd,"sent init pkg",sizeof("sent init pkg"));
@@ -119,42 +117,41 @@ int main(int argc, char** argv) {
 	if(!mode) {
 	  //continuous
 
-	  //inizializzo la lista dei canali da leggere con l'adc
-	  //la lista avrà i canali da leggere all'inizio e tutti
-	  // 8 nelle rimanenti posizioni vuote, es voglio leggere
-	  // 2 e 4 list= [2,4,8,8,8,8,8,8]
-	  int p = 0,e = 7;
-	  for (int i = 0; i < 8; i++){
-	    if(channels_mask & 1 << i){
-	      channels_list[p] = i;
-	      p++;
-	    }else{
-	      channels_list[e] = 8;
-	      e--;
-	    }
-	  }
-	  //pulisco il temp pkg
-	  pkg_temp.checksum = 0;
-	  pkg_temp.data = 0;
-	  pkg_temp.mask_pin = 0;
-	  pkg_temp.cmd = 0;
-	  pkg_temp.timestamp  = 0;
-	  //pkg_temp. = 0;
-	  TIMER_set_frequency(sampling_freq);
-	  TIMER_enable_interrupt(1);
-	  while(readings_done < readings_todo){
-	    if (interrupt_occurred){
-	      UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
-	      interrupt_occurred = 0;
-	    }
-	  }
-	  TIMER_enable_interrupt(0);
+        //inizializzo la lista dei canali da leggere con l'adc
+        //la lista avrà i canali da leggere all'inizio e tutti
+        // 8 nelle rimanenti posizioni vuote, es voglio leggere
+        // 2 e 4 list= [2,4,8,8,8,8,8,8]
+        int p = 0,e = 7;
+        for (int i = 0; i < 8; i++){
+          if(channels_mask & 1 << i){
+            channels_list[p] = i;
+            p++;
+          }else{
+            channels_list[e] = 8;
+            e--;
+          }
+        }
+        //pulisco il temp pkg
+        pkg_temp.checksum = 0;
+        pkg_temp.data = 0;
+        pkg_temp.mask_pin = 0;
+        pkg_temp.cmd = 0;
+        pkg_temp.timestamp  = 0;
+        //pkg_temp. = 0;
+        TIMER_set_frequency(sampling_freq);
+        TIMER_enable_interrupt(1);
+        while(readings_done < readings_todo){
+          if (interrupt_occurred){
+            UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
+            interrupt_occurred = 0;
+          }
+        }
+        TIMER_enable_interrupt(0);
 
-	} else {
-	  //buffered
-
-	}
-      }else{
+      } else {
+        //buffered
+      }
+    }else{
 	//data type non riconosciuto
 	;
       }
