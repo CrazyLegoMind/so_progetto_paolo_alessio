@@ -61,6 +61,7 @@ uint8_t channels_list[8] = {8,8,8,8,8,8,8,8};
 volatile uint8_t interrupt_occurred = 0;
 uint16_t readings_done = 0;
 DataPkg  pkg_temp;
+Data data_received;
 
 
 ISR(TIMER_INTERRUPT){
@@ -79,28 +80,42 @@ ISR(TIMER_INTERRUPT){
   interrupt_occurred = 1;
 }
 
+void send_msg(struct UART* fd,char*  message, size_t size){
+  TextPkg pkg_msg;
+  memcpy(pkg_msg.text,message,size);
+  pkg_msg.text_size = size;
+  UART_putData(fd, (uint8_t*) &pkg_msg, sizeof(TextPkg),TYPE_TEXTPKG);
+  _delay_ms(100);
+}
+
 
 int main(int argc, char** argv) {
-
-  //AA: spazio per ricezione InitPkg e invio dati (in buffered mode)
-  Data data_received;
-
+  
   struct UART* uart_fd = UART_init();
   sei();
-  while(1) {
-    //AA: waiting InitPkg from host
-    if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1) {
+  _delay_ms(100);
+  while(1){
+    if(UART_getData(uart_fd, (uint8_t*)&data_received ,40) == 1){   
       if(data_received.data_type == TYPE_INITPKG){
-        InitPkg pkg;
-        serial_extract_data(&data_received,(uint8_t*)&pkg,sizeof(InitPkg));
-        uint8_t mode = pkg.mode; //data
-        uint8_t sampling_freq = pkg.sampling_freq; //hz
-        uint8_t channels_mask = pkg.channels; //channel mask
-        uint8_t time = pkg.time;   //seconds
-        int trigger = pkg.trigger; //adc reading
-        uint16_t readings_todo = sampling_freq*time;
-        if(!mode) {
-        //continuous
+	InitPkg* pkg = malloc(10);
+	send_msg(uart_fd,"found init pkg",sizeof("found init pkg"));
+	
+	serial_extract_data(&data_received,(uint8_t*)pkg,8);
+	send_msg(uart_fd,"extracted pkg",sizeof("extracted pkg"));
+	
+	UART_putData(uart_fd, (uint8_t*)pkg, 8,TYPE_INITPKG);
+	_delay_ms(100);
+	
+	send_msg(uart_fd,"sent init pkg",sizeof("sent init pkg"));
+	
+      	uint8_t mode = pkg->mode; //data
+	uint8_t sampling_freq = pkg->sampling_freq; //hz
+	uint8_t channels_mask = pkg->channels; //channel mask
+	uint8_t time = pkg->time;   //seconds
+	int trigger = pkg->trigger; //adc reading
+	uint16_t readings_todo = sampling_freq*time;
+	if(!mode) {
+	  //continuous
 
         //inizializzo la lista dei canali da leggere con l'adc
         //la lista avrà i canali da leggere all'inizio e tutti
@@ -146,7 +161,7 @@ int main(int argc, char** argv) {
       memcpy(packet.text,"error no packet",15);
       packet.text_size = 15;
       UART_putData(uart_fd, (uint8_t*) &packet, sizeof(TextPkg),TYPE_TEXTPKG);
-      _delay_ms(1000);
+      _delay_ms(100);
       */
     }
   }

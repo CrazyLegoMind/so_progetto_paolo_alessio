@@ -55,26 +55,36 @@ void serial_extract_data(Data * src, uint8_t * dest, uint32_t data_size){
   }
 }
 
-//AA
-void print_pkg(Data* d) {
-  switch(d->data_type):
-      case TYPE_DATAPKG:
-        DataPkg* pkg = malloc(sizeof(DataPkg));
-        serial_extract_data(d, (DataPkg*)&p, sizeof(DataPkg));
-        fprintf(stdout,"Data Package info:\nChecksum: %" PRIu32 "\nSignal: %" PRIu16 "\nPin: %hhu\nCommand: %hhu\nEpoch: %d\n\n", pkg->checksum, pkg->data, pkg->mask_pin, pkg->cmd, pkg->timestamp);
-        break;
-      case TYPE_INITPKG:
-        InitPkg* pkg = malloc(sizeof(InitPkg));
-        serial_extract_data(d, (InitPkg*)&p, sizeof(InitPkg));
-        fprintf(stdout,"Init Package info:\nFrequency: %c\nChannels: %c\nMode: %c\nTime: %c\nTrigger: %d\n\n", pkg->sampling_freq, pkg->channels, pkg->mode, pkg->time, pkg->trigger);
-        break;
-      case TYPE_TEXTPKG:
-        TextPkg* pkg = malloc(sizeof(TextPkg));
-        serial_extract_data(d, (TextPkg*)&p, sizeof(TextPkg));
-        fprintf(stdout,"Text Package info:\nText: %s\nSize: %c\n\n", pkg->text, pkg->size);
-        break;
-      case TYPE_EMPTYPKG:
-        fprintf(stdout,"Blank package.\n");
-        break;
+
+void print_pkg(Data* d){
+  if(d->data_type ==TYPE_DATAPKG){
+    printf("printing DATAPKG\n");
+    DataPkg* pkg = malloc(sizeof(DataPkg));
+    serial_extract_data(d, (uint8_t*)pkg, sizeof(DataPkg));
+    fprintf(stdout,"Data Package info:\nChecksum: %d\nSignal:%d\nPin: %hhu\nCommand: %hhu\nEpoch: %d\n\n",
+	    pkg->checksum, pkg->data, pkg->mask_pin, pkg->cmd, pkg->timestamp);
+ 
+  }else if(d->data_type == TYPE_INITPKG){
+    printf("printing INITPKG\n");
+    InitPkg* pkg = malloc(sizeof(InitPkg));
+    serial_extract_data(d, (uint8_t*)pkg, sizeof(InitPkg));
+    fprintf(stdout,"Init Package info:\nFrequency: %c\nChannels: %c\nMode: %c\nTime: %c\nTrigger: %d\n\n",
+	    pkg->sampling_freq, pkg->channels, pkg->mode, pkg->time, pkg->trigger);
+  }else if(d->data_type ==TYPE_TEXTPKG){
+    printf("printing TEXTPKG\n");
+    TextPkg* pkg = malloc(sizeof(TextPkg));
+    serial_extract_data(d, (uint8_t*)pkg, sizeof(TextPkg));
+    char* txt = pkg->text;
+    fprintf(stdout,"Text Package info: \n text: ");
+
+    if(txt){
+      for(int c=0; c < pkg->text_size; c++){
+	fprintf(stdout,"%c",txt[c]);
+      }
+    }
+    fprintf(stdout,"\n");
+  }else if(d->data_type ==TYPE_EMPTYPKG){
+    fprintf(stdout,"Blank package.\n");
+  }
   return;
 }
