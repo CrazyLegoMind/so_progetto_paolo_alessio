@@ -9,7 +9,7 @@
 #include "../common_lib/checksum.h"
 
 //AA default baudrate
-#define BAUD 115200
+#define BAUD 57600
 //AA default connection port (check using dmesg)
 #define DEV_PATH "/dev/ttyACM0"
 

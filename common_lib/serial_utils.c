@@ -74,7 +74,7 @@ void print_pkg(Data* d){
     printf("printing TEXTPKG\n");
     TextPkg* pkg = malloc(sizeof(TextPkg));
     serial_extract_data(d, (uint8_t*)pkg, sizeof(TextPkg));
-    char* txt = pkg->text;
+    uint8_t* txt = pkg->text;
     fprintf(stdout,"Text Package info: \n text: ");
 
     if(txt){
