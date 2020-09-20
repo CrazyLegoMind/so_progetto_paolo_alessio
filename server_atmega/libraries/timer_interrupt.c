@@ -8,7 +8,7 @@
 
 //PDGZ imposta il valore di OCR di modo da ottenere una frequenza
 //di interrupt per la lettura dei pin con l'adc
-void TIMER_set_frequency(int hz){
+void TIMER_set_frequency(uint8_t hz){
   
   int timer_duration_ms= (int) 1000.0/hz;
   
