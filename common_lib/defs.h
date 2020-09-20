@@ -14,7 +14,7 @@ typedef struct _data{
 
 
 
-//AA: struttura pacchetto (11 bytes = 2816 bits)
+//AA: struttura pacchetto per campionamento da atmega
 #define TYPE_DATAPKG 1
 typedef struct _data_pkg {
   uint8_t checksum;                // controllo integrità dati, generato dal server
@@ -42,7 +42,7 @@ typedef struct _init_pkg {
   uint8_t sampling_freq;            //frequenza di campionamento (in Hz)
   uint8_t channels;                 //quanti canali sono da leggere
   uint8_t mode;                     //continuous (0) o buffered (1)
-  uint8_t time;                     //seconds
+  uint8_t time;                     //in seconds
   int8_t trigger;
 } InitPkg;
 
