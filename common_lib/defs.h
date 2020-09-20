@@ -4,7 +4,7 @@
 //AA: header per allineamento dati
 #define HEADER "Oscilloscopio"
 #define HEADER_SIZE strlen(HEADER)
-#define MAX_DATA 32
+#define MAX_DATA 27
 
 typedef struct _data{
   uint32_t data_size;
@@ -51,7 +51,7 @@ typedef struct _init_pkg {
 #define TYPE_TEXTPKG 2
 typedef struct _text_pkg {
   uint8_t text_size; //max 20
-  uint8_t text[20];
+  uint8_t text[23];
 } TextPkg;
 
 #define TYPE_EMPTYPKG 3

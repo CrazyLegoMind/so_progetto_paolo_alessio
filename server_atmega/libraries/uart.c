@@ -122,7 +122,7 @@ void UART_putString(struct UART * uart,uint8_t * buf, size_t size){
 
 void UART_putData(struct UART * uart, uint8_t * data, uint32_t data_size, uint8_t data_type){
   Data d = serial_wrap_data(data,data_size,data_type);
-  UART_putString(uart,(uint8_t*) &d,data_size);
+  UART_putString(uart,(uint8_t*) &d,sizeof(Data));
 }
 
 

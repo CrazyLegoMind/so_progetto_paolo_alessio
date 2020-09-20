@@ -61,14 +61,14 @@ void print_pkg(Data* d){
     printf("printing DATAPKG\n");
     DataPkg* pkg = malloc(sizeof(DataPkg));
     serial_extract_data(d, (uint8_t*)pkg, sizeof(DataPkg));
-    fprintf(stdout,"Data Package info:\nChecksum: %d\nSignal:%d\nPin: %hhu\nCommand: %hhu\nEpoch: %d\n\n",
+    fprintf(stdout,"Data Package info:\nChecksum: %d\nSignal:%d\nPin: %d\nCommand: %d\nEpoch: %d\n\n",
 	    pkg->checksum, pkg->data, pkg->mask_pin, pkg->cmd, pkg->timestamp);
  
   }else if(d->data_type == TYPE_INITPKG){
     printf("printing INITPKG\n");
     InitPkg* pkg = malloc(sizeof(InitPkg));
     serial_extract_data(d, (uint8_t*)pkg, sizeof(InitPkg));
-    fprintf(stdout,"Init Package info:\nFrequency: %c\nChannels: %c\nMode: %c\nTime: %c\nTrigger: %d\n\n",
+    fprintf(stdout,"Init Package info:\nFrequency: %d\nChannels: %d\nMode: %d\nTime: %d\nTrigger: %d\n\n",
 	    pkg->sampling_freq, pkg->channels, pkg->mode, pkg->time, pkg->trigger);
   }else if(d->data_type ==TYPE_TEXTPKG){
     printf("printing TEXTPKG\n");
