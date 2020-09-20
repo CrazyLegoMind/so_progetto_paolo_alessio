@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
 
     printf("Test serial begin.\nOpening serial connection... \n");
 
-    printf("printing sizes:\n packet %d \n init %d\n data %d\n text %d",
+    printf("printing sizes:\n packet %ld \n init %ld\n data %ld\n text %ld",
 	   sizeof(Data),sizeof(InitPkg),sizeof(DataPkg),sizeof(TextPkg));
     
     int fd = serial_open("/dev/ttyACM0");
@@ -45,8 +45,8 @@ int main(int argc, char** argv) {
     config_pkg.time = 2;
     config_pkg.trigger = 0;
     //for(int tr= 0; tr <10; tr++){
-      serial_send_data(fd, (uint8_t*)&config_pkg, sizeof(InitPkg),TYPE_INITPKG);
-      //}
+    serial_send_data(fd, (uint8_t*)&config_pkg, sizeof(InitPkg),TYPE_INITPKG);
+    //}
     
     while(1) {
       int try = 1;

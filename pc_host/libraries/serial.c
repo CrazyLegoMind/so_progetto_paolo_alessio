@@ -94,7 +94,7 @@ int serial_read(int fd, uint8_t* buf, size_t size) {
   }
   //printf("Read completed.\n");
   //align data
-  printf("DATA RECEIVED  with size %d: ",size);
+  printf("DATA RECEIVED  with size %ld: ",size);
   for(i = 0; i < size; i++){
     printf("%hhx ",locbuf[i]);
   }
@@ -115,7 +115,7 @@ int serial_write(int fd, void* buf, size_t size) {
   memcpy(b+HEADER_SIZE, buf, size);
   int i;
   size += HEADER_SIZE;
-  printf("DATA sent with size %d: ",size);
+  printf("DATA sent with size %ld: ",size);
   for(i = 0; i < size; i++){
     printf("%hhx ",b[i]);
   }

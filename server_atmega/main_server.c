@@ -95,15 +95,15 @@ int main(int argc, char** argv) {
   sei();
   _delay_ms(100);
   while(1){
-    if(UART_getData(uart_fd, (uint8_t*)&data_received ,40) == 1){   
+    if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1){   
       if(data_received.data_type == TYPE_INITPKG){
-	InitPkg* pkg = malloc(10);
+	InitPkg* pkg = malloc(sizeof(InitPkg));
 	send_msg(uart_fd,"found init pkg",sizeof("found init pkg"));
 	
-	serial_extract_data(&data_received,(uint8_t*)pkg,8);
+	serial_extract_data(&data_received,(uint8_t*)pkg, sizeof(InitPkg));
 	send_msg(uart_fd,"extracted pkg",sizeof("extracted pkg"));
 	
-	UART_putData(uart_fd, (uint8_t*)pkg, 8,TYPE_INITPKG);
+	UART_putData(uart_fd, (uint8_t*)pkg, sizeof(InitPkg), TYPE_INITPKG);
 	_delay_ms(100);
 	
 	send_msg(uart_fd,"sent init pkg",sizeof("sent init pkg"));
