@@ -1,5 +1,6 @@
 #ifndef SERIAL_H
 #define SERIAL_H
+
 #include <termios.h>
 #include <stdlib.h>
 #include <stdio.h>

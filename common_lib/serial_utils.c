@@ -79,7 +79,7 @@ void print_pkg(Data* d){
 
     if(txt){
       for(int c=0; c < pkg->text_size; c++){
-	fprintf(stdout,"%c",txt[c]);
+	      fprintf(stdout,"%c",txt[c]);
       }
     }
     fprintf(stdout,"\n");
