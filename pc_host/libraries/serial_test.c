@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     
     data_received = malloc(sizeof(Data));
     InitPkg config_pkg;
-    config_pkg.channels = 7;
+    config_pkg.channels = 3;
     config_pkg.mode = 0;
     config_pkg.sampling_freq = 2;
     config_pkg.time = 2;

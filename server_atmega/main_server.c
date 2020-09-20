@@ -32,8 +32,6 @@ typedef struct channels_buffers {
   volatile uint8_t chbuf_start;
   volatile uint8_t chbuf_end;
   volatile uint8_t chbuf_size;
-
-
 } Buffers;
 Buffers buf;
 
@@ -44,7 +42,7 @@ ISR(TIMER5_COMPA_vect){
   interrupt_occurred = 1;
   uint8_t i = 0;
   for(i=0; i <channels_amount; i++){
-    buf.chbuf_matrix[channels_list[i]][buf.chbuf_end] = ADC_read_pin(channels_list[i]);
+    buf.chbuf_matrix[channels_list[i]][buf.chbuf_end] = ADC_single_conversion(channels_list[i]);
   }
   buf.chbuf_size++;
   if(++buf.chbuf_end > CHANNEL_BUFFER_SIZE) buf.chbuf_end =0;
@@ -75,10 +73,10 @@ int main(int argc, char** argv) {
   buf.chbuf_end = 0;
   buf.chbuf_start = 0;
   buf.chbuf_size = 0;
-  ADC_init();
+  //ADC_init();
   sei();
   _delay_ms(100);
-
+      
   while(1){
     if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1){
       //se ricevo un pkg ne controllo il tipo
