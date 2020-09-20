@@ -1,17 +1,54 @@
-#include <stdio.h>
-#include <util/delay.h>
-#include <stdio.h>
 #include <stdint.h>
 #include <avr/io.h>
-#include "../avr_common/uart.h"
 #include "adc.h"
 
-uint8_t v;
-uint8_t in_pin;
+//PDGZ stuff
+//funzioni per gestire l'adc
+
+//inizializza l'adc in modo da avere meno overhead usando read_pin
+void ADC_init(void){
+  //disabilito gli input digitali sui pin a0-a15
+  DIDR0 = 0x00;
+
+  //azzero il bit ADC nel power reduction register
+  //in modo da abilitare l'uso dell'adc
+  PRR0 &= ~(1<<PRADC);    
+
+  //imposto il prescaler per il clock adc a 128
+  //ADCSRA2:0 tutti ad 1
+  ADCSRA = 0x07;
+
+  //accendo l'adc
+  ADCSRA |= 1 << ADEN;
+  
+  // imposto ADMUX, i primi due bit per il voltage reference a 5v
+  //bit ADLAR per il risultato left adjusted
+  
+  ADMUX = (1 << 6) |  (1 << ADLAR);
+}
 
 
-int ADC_single_conversion(uint8_t pin){
-  uint8_t low, high;
+uint8_t ADC_read_pin(uint8_t pin){
+  uint8_t res;
+  ADMUX |= (pin & 0x07);
+
+  
+  ADCSRA |= (1 << ADSC); // imposto il bit per iniziare la conversione
+  
+  while (ADCSRA & (1 << ADSC)); // quando leggerò  uno 0 la conversione sarà terminata
+  //la conversione richiede 25 ADC clock (se si inizializza ADC) 13 per le successive
+  
+  // con il risultato left adjusted posso leggere ADCH per ottenere un risultato ad 8-bit
+  // in questo modo si occupa meno memoria e l'adc puo' leggere più velocemente
+ 
+  res = ADCH;
+  
+  return res;
+}
+
+//funzione init + read_pin alto overhead
+uint8_t ADC_single_conversion(uint8_t pin){
+  uint8_t res;
 
   DIDR0 = 0x00;           //disabilito gli input digitali sui pin a0-a15
   PRR0 &= ~(1<<PRADC);    //azzero il bit ADC nel power reduction register
@@ -35,14 +72,12 @@ int ADC_single_conversion(uint8_t pin){
   while (ADCSRA & (1 << ADSC)); // quando leggerò  uno 0 la conversione sarà terminata
   //la conversione richiede 25 ADC clock (se si inizializza ADC) 13 per le successive
   
-  // con il risultato left adjusted la lettura di ADCL blocca entrambi i registri ADCL
-  // ed ADCH fino alla lettura di quest'ultimo, quindi li leggo in ordine
+  // con il risultato left adjusted posso leggere ADCH per ottenere un risultato ad 8-bit
+  // in questo modo si occupa meno memoria e l'adc puo' leggere più velocemente
+ 
+  res = ADCH;
   
-  low  = ADCL;
-  high = ADCH;
-
-  // unisco i bit per creare il numero a precisione 10bit
-  return (high << 8) | low;
+  return res;
 }
 
 void ADC_freerunnig_start(uint8_t pin){
