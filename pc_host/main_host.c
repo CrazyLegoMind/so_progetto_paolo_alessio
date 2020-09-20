@@ -20,7 +20,7 @@ InitPkg config_pkg;
 DataPkg data_pkg;
 TextPkg text_pkg;
 
-int main (int* argc, char** argv) {
+int main (int argc, char** argv) {
 	
     InitPkg config_pkg;
     uint8_t freq, mode = 2, channels = 0, seconds = -1, trigger;
@@ -37,10 +37,10 @@ int main (int* argc, char** argv) {
         printf("How many seconds after self-stop: ");
         scanf("%hhu", &seconds);
     } else if(argc == 5) {
-        freq = argv[1];
-        mode = argv[2];
-        channels = argv[3];
-        seconds = argv[4];
+        freq = (uint8_t)argv[1];
+        mode = (uint8_t)argv[2];
+        channels = (uint8_t)argv[3];
+        seconds = (uint8_t)argv[4];
     }
 	
     //check error for frequency
@@ -56,11 +56,11 @@ int main (int* argc, char** argv) {
     //if buffered mode is on, select the trigger
     if(mode) {
         printf("You selected buffered mode, so do select trigger value: ");
-        scanf("%d", &trigger);
+        scanf("%hhu", &trigger);
     }
     
     //check error for channels
-    while(channels <= 0 || channels => 9) {
+    while(channels <= 0 || channels >= 9) {
         printf("Wrong number of channels, try again.\n");
         printf("How many channels do you want to use? (max 8): ");
         scanf("%hhu", &channels);
@@ -74,7 +74,7 @@ int main (int* argc, char** argv) {
 
 
     //start
-    memset(config_pkg, 0, sizeof(InitPkg));
+    memset(&config_pkg, 0, sizeof(InitPkg));
     config_pkg.sampling_freq = freq;
     config_pkg.channels = channels;
     config_pkg.mode = mode;
@@ -87,7 +87,7 @@ int main (int* argc, char** argv) {
     	return EXIT_FAILURE;
     if(serial_set(fd, BAUD, 'n') == -1)
     	return EXIT_FAILURE;
-    serial_set_blocking(fd, 0);
+    serial_set_blocking(fd, 1);
 
     //first of all send primary info to server (atmega)
     if(serial_write(fd, &config_pkg, sizeof(InitPkg)) == -1)
@@ -96,9 +96,12 @@ int main (int* argc, char** argv) {
 
     //waiting for info from server
     FILE* file_fd = fopen("samples.txt", "w");
+    /* AA potrebbero servire
     pkg = malloc(sizeof(Data));
     data_pkg = malloc(sizeof(DataPkg));
     text_pkg = malloc(sizeof(TextPkg));
+    */
+   uint8_t* c;
     while(1) {
         //clear data at every iteration
         memset(&pkg, 0, sizeof(Data));
@@ -113,7 +116,8 @@ int main (int* argc, char** argv) {
             serial_extract_data(&pkg, (uint8_t*)&text_pkg, sizeof(TextPkg));
         
         //controllo checksum
-        if(!checksum_cmp(checksum_calc(&data_pkg, sizeof(data_pkg)), &data_pkg.checksum))
+        c = checksum_calc(&data_pkg, sizeof(data_pkg), 0);
+        if(!checksum_cmp(c, &data_pkg.checksum))
             printf("Pacchetto scartato");
         else {
             //printf("Checksum OK\n");
