@@ -41,8 +41,9 @@ ISR(TIMER5_COMPA_vect){
   readings_done++;
   interrupt_occurred = 1;
   uint8_t i = 0;
-  for(i=0; i <channels_amount; i++){
-    buf.chbuf_matrix[channels_list[i]][buf.chbuf_end] = ADC_read_pin(channels_list[i]);
+  for(i=0; i < channels_amount; i++){
+    uint8_t val = ADC_read_pin(channels_list[i]);
+    buf.chbuf_matrix[channels_list[i]][buf.chbuf_end] = val;
   }
   buf.chbuf_size++;
   if(++buf.chbuf_end > CHANNEL_BUFFER_SIZE) buf.chbuf_end =0;
@@ -88,9 +89,11 @@ int main(int argc, char** argv) {
 	uint16_t readings_todo =  pkg.sampling_freq*pkg.time;
 	if(!pkg.mode) {
 	  //continuous
+	  memset(&channels_list,8,8);
 	  fill_channels_list(pkg.channels);
 	  //pulisco il temp pkg
 	  memset(&pkg_temp,0,sizeof(DataPkg));
+
 	  readings_done = 0;
 	  TIMER_set_frequency(pkg.sampling_freq);
 	  TIMER_enable_interrupt(1);
@@ -102,7 +105,8 @@ int main(int argc, char** argv) {
 		pkg_temp.data = buf.chbuf_matrix[pin][buf.chbuf_start];
 		pkg_temp.mask_pin = pin;
 		pkg_temp.timestamp = readings_done;
-		UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
+		//UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
+		_delay_ms(10);
 	      }
 	      if(++buf.chbuf_start > CHANNEL_BUFFER_SIZE) buf.chbuf_start =0;
 	      buf.chbuf_size--;
@@ -110,6 +114,11 @@ int main(int argc, char** argv) {
 	  }
 	  TIMER_enable_interrupt(0);
 	  send_msg(uart_fd,"finished reading",sizeof("finished reading"));
+	  send_msg(uart_fd,channels_list,8);
+	  uint8_t* list = buf.chbuf_matrix[0];
+	  send_msg(uart_fd,list,20);
+	  list = buf.chbuf_matrix[1];
+	  send_msg(uart_fd,list,20);
 
 	} else {
 	  send_msg(uart_fd,"buffered mode",sizeof("buffered mode"));
