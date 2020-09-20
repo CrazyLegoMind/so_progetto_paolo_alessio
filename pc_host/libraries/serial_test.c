@@ -19,10 +19,10 @@ Data* data_received;
 int main(int argc, char** argv) {
 
     printf("Test serial begin.\nOpening serial connection... \n");
-
+    /*
     printf("printing sizes:\n packet %ld \n init %ld\n data %ld\n text %ld",
-	   sizeof(Data),sizeof(InitPkg),sizeof(DataPkg),sizeof(TextPkg));
-    
+      sizeof(Data),sizeof(InitPkg),sizeof(DataPkg),sizeof(TextPkg));
+    */
     int fd = serial_open("/dev/ttyACM0");
     if(fd<0){
       printf("failed to open serial\n");
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     while(1) {
       int try = 1;
       while(serial_read(fd,(uint8_t*) data_received, sizeof(Data)) == -1){
-	      printf("try %d An error occurs while reading from server.\n",try++);
+        printf("try %d An error occurs while reading from server.\n",try++);
       }
       print_pkg(data_received);
       printf("\n\n\n");

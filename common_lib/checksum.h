@@ -3,8 +3,8 @@
 
 //void checksum_calc(char* a, char* b, char* checksum);
 
-uint32_t checksum_calc(void *buffer, size_t len, unsigned int seed);
+uint8_t checksum_calc(void *buffer, size_t len, unsigned int seed);
 
-unsigned int checksum_cmp(uint32_t* c1, uint32_t* c2);
+unsigned int checksum_cmp(uint8_t* c1, uint8_t* c2);
 
 #endif 

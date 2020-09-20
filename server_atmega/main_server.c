@@ -120,12 +120,12 @@ int main(int argc, char** argv) {
 	  list = buf.chbuf_matrix[1];
 	  send_msg(uart_fd,list,20);
 
-	} else {
-	  send_msg(uart_fd,"buffered mode",sizeof("buffered mode"));
-	}
-      }else{
-	//data type non riconosciuto
-	send_msg(uart_fd,"received UNVALID",sizeof("received UNVALID"));
+		} else {
+		send_msg(uart_fd,"buffered mode",sizeof("buffered mode"));
+		}
+    }else{
+		//data type non riconosciuto
+		send_msg(uart_fd,"received UNVALID",sizeof("received UNVALID"));
       }
     }else{
       /*
