@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     InitPkg config_pkg;
     config_pkg.channels = 1;
     config_pkg.mode = 0;
-    config_pkg.sampling_freq = 10;
+    config_pkg.sampling_freq = 100;
     config_pkg.time = 2;
     config_pkg.trigger = 0;
     //for(int tr= 0; tr <10; tr++){
