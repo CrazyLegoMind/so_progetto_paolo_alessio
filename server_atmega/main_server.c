@@ -19,26 +19,35 @@
 
 //dati condivisi con  l'isr della lettura adc
 uint8_t channels_list[8] = {8,8,8,8,8,8,8,8};
+uint8_t channels_amount = 0;
 volatile uint8_t interrupt_occurred = 0;
 volatile uint16_t readings_done = 0;
 DataPkg  pkg_temp;
 Data data_received;
+
+#define CHANNEL_BUFFER_SIZE 256
+#define MAX_CHANNELS 8
+typedef struct channels_buffers {
+  uint8_t chbuf_matrix[MAX_CHANNELS][CHANNEL_BUFFER_SIZE];
+  volatile uint8_t chbuf_start;
+  volatile uint8_t chbuf_end;
+  volatile uint8_t chbuf_size;
+
+
+} Buffers;
+Buffers buf;
+
 
 
 ISR(TIMER5_COMPA_vect){
   readings_done++;
   interrupt_occurred = 1;
   uint8_t i = 0;
-  while(i < 8){
-    if(channels_list[i] != 8){
-      pkg_temp.data = ADC_read_pin(channels_list[i]);;
-      pkg_temp.mask_pin = i;
-      pkg_temp.timestamp = readings_done;
-      i++;
-    }else{
-      break;
-    }
+  for(i=0; i <channels_amount; i++){
+    buf.chbuf_matrix[channels_list[i]][buf.chbuf_end] = ADC_read_pin(channels_list[i]);
   }
+  buf.chbuf_size++;
+  if(++buf.chbuf_end > CHANNEL_BUFFER_SIZE) buf.chbuf_end =0;
 }
 
 void send_msg(struct UART* fd,char*  message, size_t size){
@@ -49,61 +58,56 @@ void send_msg(struct UART* fd,char*  message, size_t size){
   _delay_ms(100);
 }
 
+void fill_channels_list(uint8_t pin_mask){
+  channels_amount = 0;
+  for (int i = 0; i < 8; i++){
+    if(pin_mask & 1 << i){
+      channels_list[channels_amount] = i;
+      channels_amount++;
+    }
+  }
+}
+
 
 int main(int argc, char** argv) {
   //inizializzo ADC ed UART
   struct UART* uart_fd = UART_init();
+  buf.chbuf_end = 0;
+  buf.chbuf_start = 0;
+  buf.chbuf_size = 0;
   ADC_init();
   sei();
   _delay_ms(100);
 
-  
- 
-  
   while(1){
     if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1){
-      
+      //se ricevo un pkg ne controllo il tipo
       if(data_received.data_type == TYPE_INITPKG){
 	InitPkg pkg;
-	send_msg(uart_fd,"received INIT",sizeof("received INIT"));
+	
 	serial_extract_data(&data_received,(uint8_t*)&pkg, sizeof(InitPkg));
 	
-
-	uint8_t sampling_freq = pkg.sampling_freq; //hz
-	uint8_t channels_mask = pkg.channels; //channel mask
-	uint8_t time = pkg.time;   //seconds
-	uint8_t trigger = pkg.trigger; //adc reading
-	uint16_t readings_todo = sampling_freq*time;
+	uint16_t readings_todo =  pkg.sampling_freq*pkg.time;
 	if(!pkg.mode) {
 	  //continuous
-	  //inizializzo la lista dei canali da leggere con l'adc
-	  //la lista avrà i canali da leggere all'inizio e tutti
-	  // 8 nelle rimanenti posizioni vuote, es voglio leggere
-	  // 2 e 4 list= [2,4,8,8,8,8,8,8]
-	  send_msg(uart_fd,"continuos mode",sizeof("continuous mode"));
-	  int p = 0,e = 7;
-	  for (int i = 0; i < 8; i++){
-	    if(channels_mask & 1 << i){
-	      channels_list[p] = i;
-	      p++;
-	    }else{
-	      channels_list[e] = 8;
-	      e--;
-	    }
-	  };
+	  fill_channels_list(pkg.channels);
 	  //pulisco il temp pkg
-	  pkg_temp.checksum = 0;
-	  pkg_temp.data = 0;
-	  pkg_temp.mask_pin = 0;
-	  pkg_temp.cmd = 0;
-	  pkg_temp.timestamp  = 0;
+	  memset(&pkg_temp,0,sizeof(DataPkg));
 	  readings_done = 0;
-	  TIMER_set_frequency(sampling_freq);
+	  TIMER_set_frequency(pkg.sampling_freq);
 	  TIMER_enable_interrupt(1);
+	  int c,pin;
      	  while(readings_done < readings_todo){
-	    if (interrupt_occurred){
-	      UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
-	      interrupt_occurred = 0;
+	    if (buf.chbuf_size){
+	      for(c = 0; c < channels_amount; c++){
+		pin = channels_list[c];
+		pkg_temp.data = buf.chbuf_matrix[pin][buf.chbuf_start];
+		pkg_temp.mask_pin = pin;
+		pkg_temp.timestamp = readings_done;
+		UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
+	      }
+	      if(++buf.chbuf_start > CHANNEL_BUFFER_SIZE) buf.chbuf_start =0;
+	      buf.chbuf_size--;
 	    }
 	  }
 	  TIMER_enable_interrupt(0);

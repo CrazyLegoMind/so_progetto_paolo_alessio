@@ -1,5 +1,5 @@
 
-void ADC_init();
+void ADC_init(void);
 
 uint8_t ADC_read_pin(uint8_t pin);
 
