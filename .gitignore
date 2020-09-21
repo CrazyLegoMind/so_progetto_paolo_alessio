@@ -3,3 +3,6 @@
 #emacs temp files and buffers
 *~
 #*#
+*.o
+*.hex
+*elf

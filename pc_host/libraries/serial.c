@@ -94,14 +94,15 @@ int serial_read(int fd, uint8_t* buf, size_t size) {
   }
   //printf("Read completed.\n");
   //align data
-  /*
+  ///*
   printf("DATA RECEIVED  with size %ld: ",size);
   for(i = 0; i < size; i++){
     printf("%hhx ",locbuf[i]);
   }
+  /*
   printf("\n");
   printf("[DEBUG] searching header %s\n",HEADER);
-  */
+  //*/
   if(serial_align_data(locbuf,buf,size) == -1) {
     printf("Error while aligning data!\n");
     return -1;
