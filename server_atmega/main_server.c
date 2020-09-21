@@ -82,99 +82,55 @@ int main(int argc, char** argv) {
     if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1){
       //se ricevo un pkg ne controllo il tipo
       if(data_received.data_type == TYPE_INITPKG){
-<<<<<<< HEAD
 		InitPkg pkg;
-		send_msg(uart_fd,"received INIT",sizeof("received INIT"));
+		
 		serial_extract_data(&data_received,(uint8_t*)&pkg, sizeof(InitPkg));
 		
-
-		uint8_t sampling_freq = pkg.sampling_freq; //hz
-		uint8_t channels_mask = pkg.channels; //channel mask
-		uint8_t time = pkg.time;   //seconds
-		uint8_t trigger = pkg.trigger; //adc reading
-		uint16_t readings_todo = sampling_freq*time;
+		uint16_t readings_todo =  pkg.sampling_freq*pkg.time;
 		if(!pkg.mode) {
-		//continuous
-		//inizializzo la lista dei canali da leggere con l'adc
-		//la lista avrà i canali da leggere all'inizio e tutti
-		// 8 nelle rimanenti posizioni vuote, es voglio leggere
-		// 2 e 4 list= [2,4,8,8,8,8,8,8]
-		send_msg(uart_fd,"continuos mode",sizeof("continuous mode"));
-		int p = 0,e = 7;
-		for (int i = 0; i < 8; i++){
-			if(channels_mask & 1 << i){
-			channels_list[p] = i;
-			p++;
-			}else{
-			channels_list[e] = 8;
-			e--;
-			}
-		};
-		//pulisco il temp pkg
-		pkg_temp.checksum = 0;
-		pkg_temp.data = 0;
-		pkg_temp.mask_pin = 0;
-		pkg_temp.cmd = 0;
-		pkg_temp.timestamp  = 0;
-		readings_done = 0;
-		TIMER_set_frequency(sampling_freq);
-		TIMER_enable_interrupt(1);
+			//continuous
+			memset(&channels_list,8,8);
+			fill_channels_list(pkg.channels);
+			//pulisco il temp pkg
+			memset(&pkg_temp,0,sizeof(DataPkg));
+
+			readings_done = 0;
+			TIMER_set_frequency(pkg.sampling_freq);
+			TIMER_enable_interrupt(1);
+			int c,pin;
 			while(readings_done < readings_todo){
-			if (interrupt_occurred){
-			UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
-			interrupt_occurred = 0;
+				if (buf.chbuf_size){
+					for(c = 0; c < channels_amount; c++){
+						pin = channels_list[c];
+						pkg_temp.data = buf.chbuf_matrix[pin][buf.chbuf_start];
+						pkg_temp.mask_pin = pin;
+						pkg_temp.timestamp = readings_done;
+						//UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
+						_delay_ms(10);
+					}
+					if(++buf.chbuf_start > CHANNEL_BUFFER_SIZE) buf.chbuf_start =0;
+					buf.chbuf_size--;
+				}
 			}
+			TIMER_enable_interrupt(0);
+			send_msg(uart_fd,"finished reading",sizeof("finished reading"));
+			//stampa di debug
+			send_msg(uart_fd,channels_list,8);
+			uint8_t* list = buf.chbuf_matrix[0];
+			send_msg(uart_fd,list,20);
+			list = buf.chbuf_matrix[1];
+			send_msg(uart_fd,list,20);
+		} 
+		else {
+			send_msg(uart_fd,"buffered mode",sizeof("buffered mode"));
 		}
-		TIMER_enable_interrupt(0);
-		send_msg(uart_fd,"finished reading",sizeof("finished reading"));
-=======
-	InitPkg pkg;
-	
-	serial_extract_data(&data_received,(uint8_t*)&pkg, sizeof(InitPkg));
-	
-	uint16_t readings_todo =  pkg.sampling_freq*pkg.time;
-	if(!pkg.mode) {
-	  //continuous
-	  memset(&channels_list,8,8);
-	  fill_channels_list(pkg.channels);
-	  //pulisco il temp pkg
-	  memset(&pkg_temp,0,sizeof(DataPkg));
-
-	  readings_done = 0;
-	  TIMER_set_frequency(pkg.sampling_freq);
-	  TIMER_enable_interrupt(1);
-	  int c,pin;
-     	  while(readings_done < readings_todo){
-	    if (buf.chbuf_size){
-	      for(c = 0; c < channels_amount; c++){
-		pin = channels_list[c];
-		pkg_temp.data = buf.chbuf_matrix[pin][buf.chbuf_start];
-		pkg_temp.mask_pin = pin;
-		pkg_temp.timestamp = readings_done;
-		//UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
-		_delay_ms(10);
-	      }
-	      if(++buf.chbuf_start > CHANNEL_BUFFER_SIZE) buf.chbuf_start =0;
-	      buf.chbuf_size--;
-	    }
-	  }
-	  TIMER_enable_interrupt(0);
-	  send_msg(uart_fd,"finished reading",sizeof("finished reading"));
-	  send_msg(uart_fd,channels_list,8);
-	  uint8_t* list = buf.chbuf_matrix[0];
-	  send_msg(uart_fd,list,20);
-	  list = buf.chbuf_matrix[1];
-	  send_msg(uart_fd,list,20);
->>>>>>> PDGZ_branch
-
-		} else {
-		send_msg(uart_fd,"buffered mode",sizeof("buffered mode"));
-		}
-    }else{
+    }
+	else{
 		//data type non riconosciuto
 		send_msg(uart_fd,"received UNVALID",sizeof("received UNVALID"));
       }
-    }else{
+    }
+	else{
       /*
 	TextPkg packet;
 	memcpy(packet.text,"error no packet",15);

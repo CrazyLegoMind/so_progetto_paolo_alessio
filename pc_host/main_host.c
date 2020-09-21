@@ -20,10 +20,10 @@ InitPkg config_pkg;
 DataPkg data_pkg;
 TextPkg text_pkg;
 
-int main (int* argc, char** argv) {
+int main (int argc, char** argv) {
 	
     InitPkg config_pkg;
-    uint8_t freq, mode = 2, channels = 0, seconds = -1, trigger;
+    uint8_t freq, mode = 2, channels = 0, seconds = 0, trigger;
     printf("Welcome to oscilloscope project, powered by Alessio & Paolo\n");
 
     if(argc <= 4) {
@@ -60,7 +60,7 @@ int main (int* argc, char** argv) {
     }
     
     //check error for channels
-    while(channels <= 0 || channels => 9) {
+    while(channels <= 0 || channels >= 9) {
         printf("Wrong number of channels, try again.\n");
         printf("How many channels do you want to use? (max 8): ");
         scanf("%hhu", &channels);
@@ -74,7 +74,7 @@ int main (int* argc, char** argv) {
 
 
     //start
-    memset(config_pkg, 0, sizeof(InitPkg));
+    memset(&config_pkg, 0, sizeof(InitPkg));
     config_pkg.sampling_freq = freq;
     config_pkg.channels = channels;
     config_pkg.mode = mode;
@@ -96,9 +96,11 @@ int main (int* argc, char** argv) {
 
     //waiting for info from server
     FILE* file_fd = fopen("samples.txt", "w");
+    /*
     pkg = malloc(sizeof(Data));
     data_pkg = malloc(sizeof(DataPkg));
     text_pkg = malloc(sizeof(TextPkg));
+    */
     while(1) {
         //clear data at every iteration
         memset(&pkg, 0, sizeof(Data));
@@ -107,13 +109,14 @@ int main (int* argc, char** argv) {
 
     	while(serial_read(fd, (uint8_t*)&pkg, sizeof(Data)) == -1)
     		return EXIT_FAILURE;
-        if(pkg.data_type == TYPE_DATAPKG)    
+        print_pkg(&pkg);
+        if(pkg.data_type == TYPE_DATAPKG) 
             serial_extract_data(&pkg, (uint8_t*)&data_pkg, sizeof(DataPkg));
         else if(pkg.data_type == TYPE_TEXTPKG)
             serial_extract_data(&pkg, (uint8_t*)&text_pkg, sizeof(TextPkg));
         
         //controllo checksum
-        if(!checksum_cmp(checksum_calc(&data_pkg, sizeof(data_pkg)), &data_pkg.checksum))
+        if(!checksum_cmp(checksum_calc(&data_pkg, sizeof(data_pkg), 0), &data_pkg.checksum))
             printf("Pacchetto scartato");
         else {
             //printf("Checksum OK\n");
@@ -122,8 +125,12 @@ int main (int* argc, char** argv) {
                 printf("Error while creating the file.\n");
                 return EXIT_FAILURE;
             }
-            fprintf(file_fd, "%hhu ", data_pkg.mask_pin);
-            fprintf(file_fd, "%hhu\n", data_pkg.data);
+            //AA: costruzione file per gnuplot
+            char* x_label = "times", y_label = "values";
+            fprintf(file_fd, "#dati campionati\n#%s(x)\t%s(y)\n", x_label, y_label);
+            double time = data_pkg.timestamp * (1/freq);
+            int value = (data_pkg.data == 0 ? 0 : 5);
+            fprintf(file_fd, "%lf\t\t%d\n", time, value);
         }
     }
 
