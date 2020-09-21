@@ -39,11 +39,11 @@ int main(int argc, char** argv) {
     
     data_received = malloc(sizeof(Data));
     InitPkg config_pkg;
-    config_pkg.channels = 3;
-    config_pkg.mode = 0;
-    config_pkg.sampling_freq = 1;
-    config_pkg.time = 10;
-    config_pkg.trigger = 0;
+    config_pkg.channels = 1;
+    config_pkg.mode = 1;
+    config_pkg.sampling_freq = 255;
+    config_pkg.time = 1;
+    config_pkg.trigger = 200;
     //for(int tr= 0; tr <10; tr++){
     serial_send_data(fd, (uint8_t*)&config_pkg, sizeof(InitPkg),TYPE_INITPKG);
     //}
