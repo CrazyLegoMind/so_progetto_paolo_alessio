@@ -23,7 +23,7 @@ TextPkg text_pkg;
 int main (int argc, char** argv) {
 	
     InitPkg config_pkg;
-    uint8_t freq, mode = 2, channels = 0, seconds = -1, trigger;
+    uint8_t freq, mode = 2, channels = 0, seconds = 0, trigger;
     printf("Welcome to oscilloscope project, powered by Alessio & Paolo\n");
 
     if(argc <= 4) {
@@ -110,7 +110,8 @@ int main (int argc, char** argv) {
 
     	while(serial_read(fd, (uint8_t*)&pkg, sizeof(Data)) == -1)
     		return EXIT_FAILURE;
-        if(pkg.data_type == TYPE_DATAPKG)    
+        print_pkg(&pkg);
+        if(pkg.data_type == TYPE_DATAPKG) 
             serial_extract_data(&pkg, (uint8_t*)&data_pkg, sizeof(DataPkg));
         else if(pkg.data_type == TYPE_TEXTPKG)
             serial_extract_data(&pkg, (uint8_t*)&text_pkg, sizeof(TextPkg));
@@ -126,8 +127,12 @@ int main (int argc, char** argv) {
                 printf("Error while creating the file.\n");
                 return EXIT_FAILURE;
             }
-            fprintf(file_fd, "%hhu ", data_pkg.mask_pin);
-            fprintf(file_fd, "%hhu\n", data_pkg.data);
+            //AA: costruzione file per gnuplot
+            char* x_label = "times", y_label = "values";
+            fprintf(file_fd, "#dati campionati\n#%s(x)\t%s(y)\n", x_label, y_label);
+            double time = data_pkg.timestamp * (1/freq);
+            int value = (data_pkg.data == 0 ? 0 : 5);
+            fprintf(file_fd, "%lf\t\t%d\n", time, value);
         }
     }
 
