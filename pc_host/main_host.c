@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include "libraries/serial.h"
 #include "../common_lib/defs.h"
-#include "../common_lib/checksum.h"
+//#include "../common_lib/checksum.h"
 #include "../common_lib/serial_utils.h"
 
 //AA default baudrate
@@ -88,52 +88,50 @@ int main (int argc, char** argv) {
     if(serial_set(fd, BAUD, 'n') == -1)
     	return EXIT_FAILURE;
     serial_set_blocking(fd, 1);
-
-    //first of all send primary info to server (atmega)
-    if(serial_write(fd, &config_pkg, sizeof(InitPkg)) == -1)
-    	return EXIT_FAILURE;
     sleep(1);
+    //first of all send primary info to server (atmega)
+    serial_send_data(fd, (uint8_t*)&config_pkg, sizeof(InitPkg), TYPE_INITPKG);
 
     //waiting for info from server
     FILE* file_fd = fopen("samples.txt", "w");
+    if(!file_fd) {
+        printf("Error while creating the file.\n");
+        return EXIT_FAILURE;
+    }
     /* AA potrebbero servire
     pkg = malloc(sizeof(Data));
     data_pkg = malloc(sizeof(DataPkg));
     text_pkg = malloc(sizeof(TextPkg));
     */
-   uint8_t* c;
+    //uint8_t* c;
+    char* x_label = "times", y_label = "values";
+    printf("Entering while loop...");
     while(1) {
         //clear data at every iteration
         memset(&pkg, 0, sizeof(Data));
         memset(&data_pkg, 0, sizeof(DataPkg));
         memset(&text_pkg, 0, sizeof(TextPkg));
 
-    	while(serial_read(fd, (uint8_t*)&pkg, sizeof(Data)) == -1)
-    		return EXIT_FAILURE;
+    	while(serial_read(fd, (uint8_t*)&pkg, sizeof(Data)) == -1);
         print_pkg(&pkg);
         if(pkg.data_type == TYPE_DATAPKG) 
             serial_extract_data(&pkg, (uint8_t*)&data_pkg, sizeof(DataPkg));
         else if(pkg.data_type == TYPE_TEXTPKG)
             serial_extract_data(&pkg, (uint8_t*)&text_pkg, sizeof(TextPkg));
         
+        /*
         //controllo checksum
         c = checksum_calc(&data_pkg, sizeof(data_pkg), 0);
         if(!checksum_cmp(c, &data_pkg.checksum))
             printf("Pacchetto scartato");
         else {
-            //printf("Checksum OK\n");
-            //save data (pin & value?) onto a file
-            if(!file_fd) {
-                printf("Error while creating the file.\n");
-                return EXIT_FAILURE;
-            }
+            //printf("Checksum OK\n"); */
             //AA: costruzione file per gnuplot
-            char* x_label = "times", y_label = "values";
             fprintf(file_fd, "#dati campionati\n#%s(x)\t%s(y)\n", x_label, y_label);
             double time = data_pkg.timestamp * (1/freq);
             int value = (data_pkg.data == 0 ? 0 : 5);
             fprintf(file_fd, "%lf\t\t%d\n", time, value);
-        }
+        //}
     }
 
     //printf("END OF OPERATIONS.\n");
