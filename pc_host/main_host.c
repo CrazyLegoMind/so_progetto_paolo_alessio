@@ -15,7 +15,7 @@
 #define DEV_PATH "/dev/ttyACM0"
 
 
-Data pkg;
+Data* pkg;
 InitPkg config_pkg;
 DataPkg data_pkg;
 TextPkg text_pkg;
@@ -24,6 +24,7 @@ int main (int argc, char** argv) {
 	
     InitPkg config_pkg;
     uint8_t freq, mode = 2, channels = 0, seconds = 0, trigger;
+    pkg = (Data*) malloc(sizeof(Data));
     printf("Welcome to oscilloscope project, powered by Alessio & Paolo\n");
 
     if(argc <= 4) {
@@ -85,8 +86,11 @@ int main (int argc, char** argv) {
     int fd = serial_open(DEV_PATH);
     if(fd < 0) 
     	return EXIT_FAILURE;
-    if(serial_set(fd, BAUD, 'n') == -1)
-    	return EXIT_FAILURE;
+    int res_set = serial_set(fd, 57600, 0);
+    if(res_set == -1){
+      printf("failed to set serial\n");
+      return EXIT_FAILURE;
+    }
     serial_set_blocking(fd, 1);
     sleep(1);
     //first of all send primary info to server (atmega)
@@ -106,19 +110,22 @@ int main (int argc, char** argv) {
     //uint8_t* c;
     char* x_label = "times", y_label = "values";
     printf("Entering while loop...");
-    while(1) {
+    int epoch_current=0, epoch_max;
+    epoch_max = freq*seconds;
+    while(epoch_current < epoch_max) {
         //clear data at every iteration
-        memset(&pkg, 0, sizeof(Data));
+        memset(pkg, 0, sizeof(Data));
         memset(&data_pkg, 0, sizeof(DataPkg));
         memset(&text_pkg, 0, sizeof(TextPkg));
 
-    	while(serial_read(fd, (uint8_t*)&pkg, sizeof(Data)) == -1);
-        print_pkg(&pkg);
-        if(pkg.data_type == TYPE_DATAPKG) 
-            serial_extract_data(&pkg, (uint8_t*)&data_pkg, sizeof(DataPkg));
-        else if(pkg.data_type == TYPE_TEXTPKG)
-            serial_extract_data(&pkg, (uint8_t*)&text_pkg, sizeof(TextPkg));
-        
+    	while(serial_read(fd, (uint8_t*)pkg, sizeof(Data)) == -1);
+        print_pkg(pkg);
+        if(pkg->data_type == TYPE_DATAPKG) 
+            serial_extract_data(pkg, (uint8_t*)&data_pkg, sizeof(DataPkg));
+        else if(pkg->data_type == TYPE_TEXTPKG)
+            serial_extract_data(pkg, (uint8_t*)&text_pkg, sizeof(TextPkg));
+        printf("extract successful\n");
+	epoch_current++;
         /*
         //controllo checksum
         c = checksum_calc(&data_pkg, sizeof(data_pkg), 0);
@@ -127,7 +134,7 @@ int main (int argc, char** argv) {
         else {
             //printf("Checksum OK\n"); */
             //AA: costruzione file per gnuplot
-            fprintf(file_fd, "#dati campionati\n#%s(x)\t%s(y)\n", x_label, y_label);
+            //xfprintf(file_fd, "#dati campionati\n#%s(x)\t%s(y)\n", x_label, y_label);
             double time = data_pkg.timestamp * (1/freq);
             int value = (data_pkg.data == 0 ? 0 : 5);
             fprintf(file_fd, "%lf\t\t%d\n", time, value);

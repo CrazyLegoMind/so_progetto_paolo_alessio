@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
 	
 	if(mode == 0) {
 	  //continuous mode
-	  send_msg(uart_fd,"continuos",sizeof("continuous"));
+	  //send_msg(uart_fd,"continuos",sizeof("continuous"));
 	  TIMER_set_frequency(pkg.sampling_freq);
 	  TIMER_enable_interrupt(1);
 	  int c =  0,pin = 0,readings_current = 0;
