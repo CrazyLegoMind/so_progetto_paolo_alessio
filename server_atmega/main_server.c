@@ -34,16 +34,6 @@ uint8_t mode= 0; //0 = continuous, 1 = buffered
 uint8_t trigger_value = 0;
 volatile uint8_t start = 0;
 
-#define CHANNEL_BUFFER_SIZE 256
-#define MAX_CHANNELS 8
-typedef struct channels_buffers {
-  uint8_t chbuf_matrix[MAX_CHANNELS][CHANNEL_BUFFER_SIZE];
-  volatile uint8_t chbuf_start;
-  volatile uint8_t chbuf_end;
-  volatile uint8_t chbuf_size;
-} Buffers;
-Buffers buf;
-
 //struct per definire un array di buffer circolari per i valori di tutti i canali
 //l'insieme di buffer  ha un solo end/start/size comune e deve essere letto in accordo
 //con quali canali sono validi in channels_list
@@ -85,8 +75,6 @@ ISR(TIMER5_COMPA_vect){
       if(++buf.chbuf_end > CHANNEL_BUFFER_SIZE) buf.chbuf_end = 0;
     }
   }
-  buf.chbuf_size++;
-  if(++buf.chbuf_end > CHANNEL_BUFFER_SIZE) buf.chbuf_end =0;
 }
 
 
@@ -114,9 +102,6 @@ void fill_channels_list(uint8_t pin_mask){
 int main(int argc, char** argv) {
   //inizializzo ADC, UART ed i buffer
   struct UART* uart_fd = UART_init();
-  buf.chbuf_end = 0;
-  buf.chbuf_start = 0;
-  buf.chbuf_size = 0;
   ADC_init();
   sei();
   _delay_ms(100);
@@ -167,14 +152,14 @@ int main(int argc, char** argv) {
 	  }
 	  TIMER_enable_interrupt(0);
 	  /* DEBUG PRINTS FOR BUFFERS
-	  send_msg(uart_fd,"finished reading",sizeof("finished reading"));
-	  send_msg(uart_fd,channels_list,8);
-	  uint8_t* list = buf.chbuf_matrix[0];
-	  send_msg(uart_fd,list,20);
-	  list = buf.chbuf_matrix[1];
-	  send_msg(uart_fd,list,20);
-	  list = buf.chbuf_matrix[2];
-	  send_msg(uart_fd,list,20);
+	     send_msg(uart_fd,"finished reading",sizeof("finished reading"));
+	     send_msg(uart_fd,channels_list,8);
+	     uint8_t* list = buf.chbuf_matrix[0];
+	     send_msg(uart_fd,list,20);
+	     list = buf.chbuf_matrix[1];
+	     send_msg(uart_fd,list,20);
+	     list = buf.chbuf_matrix[2];
+	     send_msg(uart_fd,list,20);
 	  //*/
 	  
 	} else if (mode == 1){
@@ -204,7 +189,7 @@ int main(int argc, char** argv) {
 	send_msg(uart_fd,"received UNVALID",sizeof("received UNVALID"));
       }
     }
-	else{
+    else{
       /*
 	TextPkg packet;
 	memcpy(packet.text,"error no packet",15);
