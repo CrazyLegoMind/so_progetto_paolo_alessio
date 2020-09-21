@@ -29,7 +29,7 @@ BINS=adc_reader.elf buffered.elf checksum.elf
 
 # put here the additional .o files you want to generate
 # one .c file for each .o should be present
-OBJS= ../avr_common/uart.o 
+OBJS= ../avr_common/uart.o ../libraries/adc_reader.o
 
 # put here the additional header files needed for compilation
 HEADERS= ../avr_common/uart.h  ../libraries/adc_reader.h ../libraries/buffered.h ../../commmon_lib/checksum.h
