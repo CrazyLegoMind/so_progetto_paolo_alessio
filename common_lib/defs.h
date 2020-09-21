@@ -1,5 +1,6 @@
 #ifndef DEFS_H
 #define DEFS_H
+#include <stdint.h>
 
 //AA: header per allineamento dati
 #define HEADER "Oscilloscopio"

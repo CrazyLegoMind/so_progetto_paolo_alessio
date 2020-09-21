@@ -1,42 +1,22 @@
-# AVR makefile stub
-
-# to clean a folder
-# from command line
-#$> make clean
-
-# to build the folder
-#$> make 
-
-# to upload a file
-# from command line
-# $> make <main_filename>.hex
-
-#
-# remember to give yourself the read/write permissions on the
-# serial line
-# $> sudo addgroup <your username> dialout
-# logout/login
+CC = gcc
+CFLAGS = -Wall
+SRCS = libraries/serial.c main_host.c ../common_lib/serial_utils.c ../common_lib/checksum.c
+HEADERS = libraries/serial.h ../common_lib/defs.h ../common_lib/checksum.h ../common_lib/serial_utils.h
+OBJS = $(SRCS:.c=.o)
+MAIN = main_host
 
 
+.PHONY: depend clean
 
-# !!!!!!!!!!!!!!!! MODIFY HERE !!!!!!!!!!!!!!!! 
+all: $(MAIN)
 
-# put here the file containing the main() routine
-# to be uploaded on the avr
-# you can add multiple files, they will be all generated
+$(MAIN): $(OBJS)
+	$(CC) $(CFLAGS) $(SRCS) $(HEADERS) -o $(MAIN)
 
-BINS=main_host
+*.o: $(SRCS)
+	$(CC) $(CFLAGS) $(SRCS) -c
 
-# put here the additional .o files you want to generate
-# one .c file for each .o should be present
-OBJS= libraries/serial.o ../common_lib/serial_utils.o
-
-# put here the additional header files needed for compilation
-HEADERS= libraries/serial.h ../common_lib/defs.h ../common_lib/serial_utils.h  libraries/buffer_utils.h
-
-
-# the file below contains the actual rules
-
-# !!!!!!!!!!!!!!!! MODIFY HERE !!!!!!!!!!!!!!!! 
-
-#include avr_common/avr.mk
+clean:
+	rm -rf *.h.gch
+	rm -rf *.o
+	rm -rf $(MAIN)

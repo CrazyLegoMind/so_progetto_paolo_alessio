@@ -16,7 +16,7 @@ void ADC_init(void){
 
   //imposto il prescaler per il clock adc a 128
   //ADCSRA2:0 tutti ad 1
-  ADCSRA = 0x07;
+  ADCSRA = 0x06;
 
   //accendo l'adc
   ADCSRA |= 1 << ADEN;
