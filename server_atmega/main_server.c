@@ -52,8 +52,10 @@ ISR(TIMER5_COMPA_vect){
   readings_done++;
   interrupt_occurred = 1;
   uint8_t i = 0, val = 0;
+  
   if(!mode){
     for(i=0; i < channels_amount; i++){
+      
       buf.chbuf_matrix[channels_list[i]][buf.chbuf_end] = ADC_read_pin(channels_list[i]);
     }
     buf.chbuf_size++;
@@ -122,7 +124,7 @@ int main(int argc, char** argv) {
 	  memset(buf.chbuf_matrix[b],0,CHANNEL_BUFFER_SIZE);
 	}
 	//dati
-	uint16_t readings_todo =  pkg.sampling_freq*pkg.time;
+	uint32_t readings_todo =  pkg.sampling_freq*pkg.time;
 	fill_channels_list(pkg.channels);
 	readings_done = 0;
 	buf.chbuf_end = 0;

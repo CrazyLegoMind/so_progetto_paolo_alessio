@@ -3,5 +3,5 @@
 
 #define TIMER_INTERRUPT TIMER5_COMPA_vect
 
-void TIMER_set_frequency(int hz);
-void TIMER_enable_interrupt(int status);
+void TIMER_set_frequency(uint32_t hz);
+void TIMER_enable_interrupt(uint8_t status);

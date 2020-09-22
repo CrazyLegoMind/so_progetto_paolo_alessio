@@ -14,7 +14,7 @@ void ADC_init(void){
   //in modo da abilitare l'uso dell'adc
   PRR0 &= ~(1<<PRADC);    
 
-  //imposto il prescaler per il clock adc a 128
+  //imposto il prescaler per il clock adc a 64
   //ADCSRA2:0 tutti ad 1
   ADCSRA = 0x06;
 
@@ -30,7 +30,7 @@ void ADC_init(void){
 
 uint8_t ADC_read_pin(uint8_t pin){
   uint8_t res;
-  ADMUX |= (pin & 0x07);
+  ADMUX = (1 << 6) |  (1 << ADLAR) |(pin & 0x07);
 
   
   ADCSRA |= (1 << ADSC); // imposto il bit per iniziare la conversione
