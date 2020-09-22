@@ -23,25 +23,31 @@ TextPkg text_pkg;
 int main (int argc, char** argv) {
 	
     InitPkg config_pkg;
-    uint8_t freq, mode = 2, channels = 0, seconds = 0, trigger;
+    uint32_t freq = 0;
+    uint8_t mode = 2, channels = 0, seconds = 0, trigger;
     pkg = (Data*) malloc(sizeof(Data));
     printf("Welcome to oscilloscope project, powered by Alessio & Paolo\n");
 
-    if(argc <= 4) {
+    if(argc == 1) {
         //insert list of settings
         printf("Give your sampling frequency (in Hz): ");
-        scanf("%hhu",&freq);
+        scanf("%d",&freq);
         printf("Which mode you want to operate? (0 for continuous sampling, 1 for buffered mode): ");
         scanf("%hhu", &mode);
         printf("How many channels do you want to use? (max 8) ");
         scanf("%hhu", &channels);
         printf("How many seconds after self-stop: ");
         scanf("%hhu", &seconds);
-    } else if(argc == 5) {
-        freq = (uint8_t)argv[1];
-        mode = (uint8_t)argv[2];
-        channels = (uint8_t)argv[3];
-        seconds = (uint8_t)argv[4];
+    } else if(argc == 6) {
+      freq = (uint32_t)atoi(argv[1]);
+      mode = (uint8_t)atoi(argv[2]);
+      channels = (uint8_t)atoi(argv[3]);
+      seconds = (uint8_t)atoi(argv[4]);
+      trigger = (uint8_t)atoi(argv[5]);
+      printf("starting with params:\n hz: %d \n mode: %d \n channels mask: %hhu \n seconds: %d \n trigger: %d\n",freq,mode,channels,seconds,trigger);
+    }else{
+      printf("only %d param, please put none or 5 params in fomat: \n <hz> <mode> <channels> <seconds> <trigger>\n", argc-1);
+	return EXIT_FAILURE;
     }
 	
     //check error for frequency
@@ -55,17 +61,24 @@ int main (int argc, char** argv) {
     }
 
     //if buffered mode is on, select the trigger
-    if(mode) {
+    if(mode && trigger == 0) {
         printf("You selected buffered mode, so do select trigger value: ");
         scanf("%hhu", &trigger);
     }
+
+
+    //channel è una maschera a 8 bit va da 0 (nessun canale)
+    //a 255 tutti i canali da A0 a A7, dove per esempio 8
+    //vuoldire leggi il canale A3
     
     //check error for channels
+    /*
     while(channels <= 0 || channels >= 9) {
         printf("Wrong number of channels, try again.\n");
         printf("How many channels do you want to use? (max 8): ");
         scanf("%hhu", &channels);
     }
+    */
     
     //check error for seconds
     while(seconds <= 0) {
@@ -99,19 +112,22 @@ int main (int argc, char** argv) {
     //waiting for info from server
     FILE* file_fd = fopen("samples.txt", "w");
     if(!file_fd) {
-        printf("Error while creating the file.\n");
-        return EXIT_FAILURE;
+      printf("Error while creating the file.\n");
+      return EXIT_FAILURE;
     }
+    //AA: costruzione file per gnuplot
+    fprintf(file_fd, "#dati campionati\n#time(x)\treading(y)\n");
     /* AA potrebbero servire
-    pkg = malloc(sizeof(Data));
-    data_pkg = malloc(sizeof(DataPkg));
+       pkg = malloc(sizeof(Data));
+       data_pkg = malloc(sizeof(DataPkg));
     text_pkg = malloc(sizeof(TextPkg));
     */
-    //uint8_t* c;
-    char* x_label = "times", y_label = "values";
+
     printf("Entering while loop...");
-    int epoch_current=0, epoch_max;
-    epoch_max = freq*seconds;
+    int epoch_current=0, epoch_max = 255;
+    float time = 0.0;
+    float step = 1.0 /((float)freq);
+    if(!mode) epoch_max = freq*seconds;
     while(epoch_current < epoch_max) {
         //clear data at every iteration
         memset(pkg, 0, sizeof(Data));
@@ -125,7 +141,7 @@ int main (int argc, char** argv) {
         else if(pkg->data_type == TYPE_TEXTPKG)
             serial_extract_data(pkg, (uint8_t*)&text_pkg, sizeof(TextPkg));
         printf("extract successful\n");
-	epoch_current++;
+	epoch_current = data_pkg.timestamp;
         /*
         //controllo checksum
         c = checksum_calc(&data_pkg, sizeof(data_pkg), 0);
@@ -133,11 +149,9 @@ int main (int argc, char** argv) {
             printf("Pacchetto scartato");
         else {
             //printf("Checksum OK\n"); */
-            //AA: costruzione file per gnuplot
-            //xfprintf(file_fd, "#dati campionati\n#%s(x)\t%s(y)\n", x_label, y_label);
-            double time = data_pkg.timestamp * (1/freq);
-            int value = (data_pkg.data == 0 ? 0 : 5);
-            fprintf(file_fd, "%lf\t\t%d\n", time, value);
+	time = (float)data_pkg.timestamp * step;
+        int value = data_pkg.data;
+        fprintf(file_fd, "%lf\t\t%d\n", time, value);
         //}
     }
 

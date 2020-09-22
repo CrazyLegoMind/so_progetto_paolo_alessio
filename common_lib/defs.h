@@ -7,22 +7,19 @@
 #define HEADER_SIZE strlen(HEADER)
 #define MAX_DATA 27
 
+#pragma pack(push, 1)
 typedef struct _data{
   uint32_t data_size;
   uint8_t data_type;
   uint8_t data[MAX_DATA];
 } Data;
 
-
-
 //AA: struttura pacchetto per campionamento da atmega
 #define TYPE_DATAPKG 1
 typedef struct _data_pkg {
-  uint8_t checksum;                // controllo integrità dati, generato dal server
   uint8_t data;                    // valore misurato
   uint8_t mask_pin;                // pin da dove si legge il valore
-  uint8_t cmd;                     // codice per la gestione dei pacchetti
-  uint8_t timestamp;               // intero che rappresenta l'epoca dei pacchetti
+  uint32_t timestamp;               // intero che rappresenta l'epoca dei pacchetti
 } DataPkg;
 
 /*
@@ -40,11 +37,11 @@ int first_pkg;                      // indice del primo blocco disponibile per u
 //AA: struttura che setta il server secondo i valori forniti dall'utente
 #define TYPE_INITPKG 0
 typedef struct _init_pkg {
-  uint8_t sampling_freq;            //frequenza di campionamento (in Hz)
-  uint8_t channels;                 //quanti canali sono da leggere
+  uint32_t sampling_freq;           //frequenza di campionamento (in Hz)
+  uint8_t channels;                 //maschera dei canali, un bit a 1 significa canale i da leggere
   uint8_t mode;                     //continuous (0) o buffered (1)
-  uint8_t time;                     //in seconds
-  int8_t trigger;
+  uint8_t time;                     // se continuous per quanti secondi continuare la lettura
+  uint8_t trigger;                  // se buffered valore 0-255 che se letto su qualsisi canale comincia la lettura
 } InitPkg;
 
 
@@ -56,5 +53,7 @@ typedef struct _text_pkg {
 } TextPkg;
 
 #define TYPE_EMPTYPKG 3
+
+#pragma pack(pop)
 
 #endif

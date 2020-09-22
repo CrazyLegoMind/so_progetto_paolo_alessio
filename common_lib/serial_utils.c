@@ -46,7 +46,6 @@ Data serial_wrap_data(uint8_t * data, uint32_t data_size, uint8_t data_type){
 
 void serial_extract_data(Data * src, uint8_t * dest, uint32_t data_size){
   if(src->data_size!=data_size){
-    printf("extracr error: size mismatch %d != %d\n", src->data_size, data_size);
     return;
   }
   for(uint16_t i = 0; i<src->data_size; i++){
@@ -61,8 +60,8 @@ void print_pkg(Data* d){
     printf("printing DATAPKG\n");
     DataPkg* pkg = malloc(sizeof(DataPkg));
     serial_extract_data(d, (uint8_t*)pkg, sizeof(DataPkg));
-    fprintf(stdout,"Data Package info:\nChecksum: %d\nSignal:%d\nPin: %d\nCommand: %d\nEpoch: %d\n\n",
-	    pkg->checksum, pkg->data, pkg->mask_pin, pkg->cmd, pkg->timestamp);
+    fprintf(stdout,"Data Package info:\nSignal:%d\nPin: %d\nEpoch: %d\n\n",
+	     pkg->data, pkg->mask_pin, pkg->timestamp);
  
   }else if(d->data_type == TYPE_INITPKG){
     printf("printing INITPKG\n");
