@@ -14,6 +14,8 @@
 //AA default connection port (check using dmesg)
 #define DEV_PATH "/dev/ttyACM0"
 
+#define MAX_CHANNELS 8
+
 const char filenames[8][15] = 
 {
     "samples_A0.txt",
@@ -31,6 +33,47 @@ Data* pkg;
 InitPkg config_pkg;
 DataPkg data_pkg;
 TextPkg text_pkg;
+uint8_t channel_list[MAX_CHANNELS] = {8,8,8,8,8,8,8,8};
+uint8_t channel_count = 0;
+  
+uint8_t scan_channels(){
+  char ch;
+  uint8_t mask = 0;
+  int ch_num = 0;
+  channel_count = 0;
+  printf("\n\ninsert one channel at time (0-7) or channels in a single string\ni.e. 245q for channel A2 + A4 +A5\n-- 'a' for all channels\n-- 'q' to end channel list \n-- if quit with no input default pin is A0:\n");
+  scanf(" %c", &ch);
+  while(ch != 'q'){
+    if(ch == 'a'){
+      channel_count = 8;
+      return 255;
+    }
+    ch_num = atoi(&ch);
+    if (ch_num < 8 && ch_num >= 0){
+      uint8_t ch_mask = 1 << ch_num;
+      if( mask & ch_mask ){
+	printf("channel already in the list, skipping...\n");
+      }else{
+	printf("added A%d\n",ch_num);
+	mask |= ch_mask;
+	channel_count++;
+      }
+    }else{
+      printf("invalid channel, insert again:\n ");
+    }
+    scanf(" %c", &ch);
+  }
+  
+  if(ch == 'q' && channel_count == 0){
+    printf("no input: default to read only from A0\n");
+    channel_count = 1;
+    mask = 1;
+  }
+  printf("selected %d channels with mask %hhu\n",channel_count,mask);
+  return mask;
+}
+
+
 
 int main (int argc, char** argv) {
 
@@ -47,10 +90,11 @@ int main (int argc, char** argv) {
         scanf("%d",&freq);
         printf("Which mode you want to operate? (0 for continuous sampling, 1 for buffered mode): ");
         scanf("%hhu", &mode);
-        printf("Insert mask pin value (from 0 to 255): ");
-        scanf("%hhu", &channels);
-        printf("How many seconds after self-stop: ");
-        scanf("%hhu", &seconds);
+	channels = scan_channels();
+	if(mode != 1){
+	  printf("How many seconds after self-stop: ");
+	  scanf("%hhu", &seconds);
+	}
     } 
     else if(argc == 6) {
       freq = (uint32_t)atoi(argv[1]);
@@ -61,7 +105,7 @@ int main (int argc, char** argv) {
       printf("starting with params:\n hz: %d \n mode: %d \n channels mask: %hhu \n seconds: %d \n trigger: %d\n",freq,mode,channels,seconds,trigger);
     }
     else{
-      printf("only %d param, please put none or 5 params in fomat: \n <hz> <mode> <channels> <seconds> <trigger>\n", argc-1);
+      printf("only %d param, please put none or 5 params in fomat: \n <hz> <mode> <channel_mask> <seconds> <trigger>\n", argc-1);
 	  return EXIT_FAILURE;
     }
     
@@ -72,7 +116,7 @@ int main (int argc, char** argv) {
         scanf("%hhu", &mode);
     }
 
-    //if buffered mode is on, select the trigger
+    //if buffered mode is on, select the trigger, if not given by argv
     if(mode && trigger == 0) {
         printf("You selected buffered mode, so do select trigger value: ");
         scanf("%hhu", &trigger);
@@ -90,8 +134,8 @@ int main (int argc, char** argv) {
         scanf("%hhu", &channels);
     }
     
-    //check error for seconds
-    while(seconds <= 0) {
+    //check error for seconds, valid only in continuous mode
+    while(!mode && seconds <= 0) {
         printf("Wrong time value, try again.\nHow many seconds after self-stop: ");
         scanf("%hhu", &seconds);
     }
@@ -150,34 +194,26 @@ int main (int argc, char** argv) {
     float step = 1.0 /((float)freq);
     if(!mode) epoch_max = freq*seconds;
     while(epoch_current +1 < epoch_max) {
-        //clear data at every iteration
-        memset(pkg, 0, sizeof(Data));
-        memset(&data_pkg, 0, sizeof(DataPkg));
-        memset(&text_pkg, 0, sizeof(TextPkg));
+      //clear data at every iteration
+      memset(pkg, 0, sizeof(Data));
+      memset(&data_pkg, 0, sizeof(DataPkg));
+      memset(&text_pkg, 0, sizeof(TextPkg));
     
-    	while(serial_read(fd, (uint8_t*)pkg, sizeof(Data)) == -1);
-        print_pkg(pkg);
-        if(pkg->data_type == TYPE_DATAPKG) 
-            serial_extract_data(pkg, (uint8_t*)&data_pkg, sizeof(DataPkg));
-        else if(pkg->data_type == TYPE_TEXTPKG)
-            serial_extract_data(pkg, (uint8_t*)&text_pkg, sizeof(TextPkg));
-        printf("extract successful\n");
-	    epoch_current = data_pkg.timestamp;
-        /*
-        //controllo checksum
-        c = checksum_calc(&data_pkg, sizeof(data_pkg), 0);
-        if(!checksum_cmp(c, &data_pkg.checksum))
-            printf("Pacchetto scartato");
-        else {
-            //printf("Checksum OK\n"); */
-        int p = (int)(data_pkg.mask_pin);
-        FILE* pin_file = fopen(filenames[p],"a");
-	    time = (float)data_pkg.timestamp * step;
-        int value = data_pkg.data;
-        fprintf(pin_file, "%lf\t\t%d\n", time, value);
-        //fprintf(file_fd, "%lf\t\t%d\n", time, value);
-        fclose(pin_file);
-        //}
+      while(serial_read(fd, (uint8_t*)pkg, sizeof(Data)) == -1);
+      print_pkg(pkg);
+      if(pkg->data_type == TYPE_TEXTPKG){
+	serial_extract_data(pkg, (uint8_t*)&text_pkg, sizeof(TextPkg));
+      }else if(pkg->data_type == TYPE_DATAPKG){  
+	serial_extract_data(pkg, (uint8_t*)&data_pkg, sizeof(DataPkg));
+	printf("extract successful\n");
+	epoch_current = data_pkg.timestamp;
+	int p = (int)(data_pkg.mask_pin);
+	FILE* pin_file = fopen(filenames[p],"a");
+	time = (float)data_pkg.timestamp * step;
+	int value = data_pkg.data;
+	fprintf(pin_file, "%lf\t\t%d\n", time, value);
+	fclose(pin_file);
+      }
     }
     
     //printf("END OF OPERATIONS.\n");
