@@ -17,8 +17,8 @@ typedef struct _data{
 //AA: struttura pacchetto per campionamento da atmega
 #define TYPE_DATAPKG 1
 typedef struct _data_pkg {
-  uint8_t data;                    // valore misurato
-  uint8_t mask_pin;                // pin da dove si legge il valore
+  uint8_t data;                     // valore misurato
+  uint8_t mask_pin;                 // pin da dove si legge il valore
   uint32_t timestamp;               // intero che rappresenta l'epoca dei pacchetti
 } DataPkg;
 
