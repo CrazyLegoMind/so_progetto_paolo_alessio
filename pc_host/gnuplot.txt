@@ -1,6 +1,0 @@
-Comandi GNUPLOT:
-$ cd ~/so_progetto_paolo_alessio/pc_host
-$ gnuplot
-gnuplot> load 'script.plt'
-Per uscire:
-gnuplot> q
