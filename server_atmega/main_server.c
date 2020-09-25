@@ -110,10 +110,13 @@ int main(int argc, char** argv) {
       
   while(1){
     if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1){
+      
+      send_msg(uart_fd,"syncing...", sizeof("syncing..."));
+      _delay_ms(100);
       //se ricevo un pkg valido ne controllo il tipo
       if(data_received.data_type == TYPE_INITPKG){
 	InitPkg pkg;
-	
+
 	serial_extract_data(&data_received,(uint8_t*)&pkg, sizeof(InitPkg));
 
 	//inizializzo dati e pulisco la memoria ogni volta che ricevo un comando
@@ -147,6 +150,7 @@ int main(int argc, char** argv) {
 		pkg_temp.mask_pin = pin;
 		pkg_temp.timestamp = readings_current;
 		UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
+		_delay_ms(3);
 	      }
 	      if(++buf.chbuf_start > CHANNEL_BUFFER_SIZE) buf.chbuf_start =0;
 	      buf.chbuf_size--;
@@ -180,7 +184,7 @@ int main(int argc, char** argv) {
 	      pkg_temp.mask_pin = pin;
 	      pkg_temp.timestamp = readings_current;
 	      UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
-	      _delay_ms(10);
+	      _delay_ms(3);
 	    }
 	    if(++buf.chbuf_start > CHANNEL_BUFFER_SIZE) buf.chbuf_start =0;
 	    buf.chbuf_size--;

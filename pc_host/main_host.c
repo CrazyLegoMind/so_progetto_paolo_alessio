@@ -116,25 +116,26 @@ int main (int argc, char** argv) {
     }
     serial_set_blocking(fd, 1);
     sleep(1);
+    //waiting for info from server, creating file(s)
+    //AA: costruzione files per gnuplot (aggiustare script)
+    for(int f=0; f < 8; f++) {
+      if(channels & 1 << f) {
+	FILE* file_fd = fopen(filenames[f], "w");
+	if(!file_fd) {
+	  printf("Error while creating the file.\n");
+	  return EXIT_FAILURE;
+	}
+	fprintf(stdout,"Created file %s\n", filenames[f]);
+	fprintf(file_fd, "#dati campionati\n#time(x)\treading(y)\n");
+	//fflush(file_fd);
+	fclose(file_fd);
+      }
+    }
     //first of all send primary info to server (atmega)
     serial_send_data(fd, (uint8_t*)&config_pkg, sizeof(InitPkg), TYPE_INITPKG);
 
 
-    //waiting for info from server, creating file(s)
-    //AA: costruzione files per gnuplot (aggiustare script)
-    for(int f=0; f < 8; f++) {
-        if(channels & 1 << f) {
-            FILE* file_fd = fopen(filenames[f], "w");
-            if(!file_fd) {
-                printf("Error while creating the file.\n");
-                return EXIT_FAILURE;
-            }
-            fprintf(stdout,"Created file %s\n", filenames[f]);
-            fprintf(file_fd, "#dati campionati\n#time(x)\treading(y)\n");
-            //fflush(file_fd);
-            fclose(file_fd);
-        }
-    }
+
     /*
     FILE* file_fd = fopen("samples.txt", "w");
     if(!file_fd) {
@@ -148,7 +149,7 @@ int main (int argc, char** argv) {
     float time = 0.0;
     float step = 1.0 /((float)freq);
     if(!mode) epoch_max = freq*seconds;
-    while(epoch_current < epoch_max) {
+    while(epoch_current +1 < epoch_max) {
         //clear data at every iteration
         memset(pkg, 0, sizeof(Data));
         memset(&data_pkg, 0, sizeof(DataPkg));
@@ -170,7 +171,7 @@ int main (int argc, char** argv) {
         else {
             //printf("Checksum OK\n"); */
         int p = (int)(data_pkg.mask_pin);
-        FILE* pin_file = fopen(filenames[p],"w+");
+        FILE* pin_file = fopen(filenames[p],"a");
 	    time = (float)data_pkg.timestamp * step;
         int value = data_pkg.data;
         fprintf(pin_file, "%lf\t\t%d\n", time, value);
