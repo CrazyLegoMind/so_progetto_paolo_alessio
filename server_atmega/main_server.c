@@ -71,10 +71,14 @@ ISR(TIMER5_COMPA_vect){
       }
     }
     if(start){
-      if(++buf.chbuf_size >= CHANNEL_BUFFER_SIZE){
+      buf.chbuf_size++;
+      if(buf.chbuf_size == CHANNEL_BUFFER_SIZE){
 	TIMER_enable_interrupt(0);
       }
-      if(++buf.chbuf_end > CHANNEL_BUFFER_SIZE) buf.chbuf_end = 0;
+      buf.chbuf_end++;
+      if(buf.chbuf_end > CHANNEL_BUFFER_SIZE){
+	buf.chbuf_end = 0;
+      }
     }
   }
 }
@@ -111,7 +115,7 @@ int main(int argc, char** argv) {
   while(1){
     if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1){
       
-      send_msg(uart_fd,"syncing...", sizeof("syncing..."));
+      //send_msg(uart_fd,"test txt", sizeof("test txt"));
       _delay_ms(100);
       //se ricevo un pkg valido ne controllo il tipo
       if(data_received.data_type == TYPE_INITPKG){
@@ -140,7 +144,8 @@ int main(int argc, char** argv) {
 	  //send_msg(uart_fd,"continuos",sizeof("continuous"));
 	  TIMER_set_frequency(pkg.sampling_freq);
 	  TIMER_enable_interrupt(1);
-	  int c =  0,pin = 0,readings_current = 0;
+	  int c =  0,pin = 0;
+	  uint32_t readings_current = 0;
      	  while(readings_current < readings_todo){
 	    if (buf.chbuf_size){
 	      for(c = 0; c < channels_amount; c++){
@@ -150,7 +155,7 @@ int main(int argc, char** argv) {
 		pkg_temp.mask_pin = pin;
 		pkg_temp.timestamp = readings_current;
 		UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
-		_delay_ms(3);
+		_delay_ms(5);
 	      }
 	      if(++buf.chbuf_start > CHANNEL_BUFFER_SIZE) buf.chbuf_start =0;
 	      buf.chbuf_size--;
@@ -174,7 +179,8 @@ int main(int argc, char** argv) {
 	  trigger_value = pkg.trigger;
 	  TIMER_set_frequency(pkg.sampling_freq);
 	  TIMER_enable_interrupt(1);
-	  int c =  0,pin = 0,readings_current = 0;
+	  int c =  0,pin = 0;
+	  uint32_t readings_current = 0;
 	  while(buf.chbuf_size < CHANNEL_BUFFER_SIZE);
      	  while(buf.chbuf_size){
 	    for(c = 0; c < channels_amount; c++){
@@ -184,7 +190,7 @@ int main(int argc, char** argv) {
 	      pkg_temp.mask_pin = pin;
 	      pkg_temp.timestamp = readings_current;
 	      UART_putData(uart_fd, (uint8_t*) &pkg_temp, sizeof(DataPkg),TYPE_DATAPKG);
-	      _delay_ms(3);
+	      _delay_ms(10);
 	    }
 	    if(++buf.chbuf_start > CHANNEL_BUFFER_SIZE) buf.chbuf_start =0;
 	    buf.chbuf_size--;
