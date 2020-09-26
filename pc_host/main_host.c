@@ -46,7 +46,8 @@ uint8_t scan_channels(){
   while(ch != 'q'){
     if(ch == 'a'){
       channel_count = 8;
-      return 255;
+      mask = 255;
+      break;
     }
     ch_num = atoi(&ch);
     if (ch_num < 8 && ch_num >= 0){
@@ -163,8 +164,10 @@ int main (int argc, char** argv) {
     sleep(1);
     //waiting for info from server, creating file(s)
     //AA: costruzione files per gnuplot (aggiustare script)
+    int init_mask = channel_count ? 0 : 1;
     for(int f=0; f < 8; f++) {
       if(channels & 1 << f) {
+	if(init_mask)channel_count++;
         FILE* file_fd = fopen(filenames[f], "w");
         if(!file_fd) {
           fprintf(stderr,"Error while creating the A%d pin file.\n",f);
@@ -190,14 +193,22 @@ int main (int argc, char** argv) {
     fprintf(file_fd, "#dati campionati\n#time(x)\treading(y)\n"); */
     
     //printf("Entering while loop...");
-    int epoch_current=0, epoch_max;
+    int epoch_current=0,packet_count=0,packet_end_current =0,epoch_max=0, packet_max = 0; //epoch max, packet epoch i need to read when i read last packet of a channel
     float time = 0.0;
     float step = 1.0 /((float)freq);
 
-    if(!mode) epoch_max = freq*seconds*channel_count;
-    else epoch_max = 255*channel_count;
-    
-    while(epoch_current +1 < epoch_max) {
+    if(!mode){
+      epoch_max = (freq*seconds)-1;
+      packet_max = freq*seconds*channel_count;
+    }else{
+      epoch_max = 255;
+      packet_max = 256*channel_count;
+    }
+    while(packet_end_current < channel_count) {
+      if(packet_count >= packet_max){
+	printf("lost some final packet: exiting anyway\n");
+	break;
+      }
       //clear data at every iteration
       memset(pkg, 0, sizeof(Data));
       memset(&data_pkg, 0, sizeof(DataPkg));
@@ -210,7 +221,10 @@ int main (int argc, char** argv) {
       }else if(pkg->data_type == TYPE_DATAPKG){  
         serial_extract_data(pkg, (uint8_t*)&data_pkg, sizeof(DataPkg));
         printf("extract successful\n");
+	packet_count++;
         epoch_current = data_pkg.timestamp;
+	if(epoch_current == epoch_max) packet_end_current++;
+	
         int p = (int)(data_pkg.mask_pin);
         FILE* pin_file = fopen(filenames[p],"a");
         time = (float)data_pkg.timestamp * step;
@@ -218,8 +232,9 @@ int main (int argc, char** argv) {
         fprintf(pin_file, "%lf\t\t%d\n", time, value);
         fclose(pin_file);
       }
+      
     }
-    
+    //printf("packet arrived: %f (percentage)\n", (packet_count * 100)/packet_max);
     //printf("END OF OPERATIONS.\n");
     //fclose(file_fd);
     free(pkg);
