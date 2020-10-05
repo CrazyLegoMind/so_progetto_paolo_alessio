@@ -7,4 +7,4 @@ uint8_t ADC_single_conversion(uint8_t pin);
 
 void ADC_freerunning_start(uint8_t pin);
 
-void ADC_freerunnig_stop(int arg);
+void ADC_freerunnig_stop(void);

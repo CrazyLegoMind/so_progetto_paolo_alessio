@@ -10,9 +10,6 @@
 #include "../common_lib/serial_utils.h"
 #include "../common_lib/defs.h"
 
-//AA: gestione pacchetti da server
-//Da host dobbiamo sapere quale modalità adottare, quindi in primis ricevo il pacchetto di configurazione
-//a seconda del valore letto procedo all'invio continuous o buffered
 
 
 //PDGZ:
@@ -54,8 +51,8 @@ ISR(TIMER5_COMPA_vect){
   uint8_t i = 0, val = 0;
   
   if(!mode){
+    //continuous
     for(i=0; i < channels_amount; i++){
-      
       buf.chbuf_matrix[channels_list[i]][buf.chbuf_end] = ADC_read_pin(channels_list[i]);
     }
     buf.chbuf_size++;
@@ -63,6 +60,7 @@ ISR(TIMER5_COMPA_vect){
 
     
   }else if(mode == 1){
+    //buffered
     for(i=0; i < channels_amount; i++){
       val = ADC_read_pin(channels_list[i]);
       buf.chbuf_matrix[channels_list[i]][buf.chbuf_end] = val;
@@ -71,6 +69,7 @@ ISR(TIMER5_COMPA_vect){
       }
     }
     if(start){
+      //buffered post-trigger
       buf.chbuf_size++;
       if(buf.chbuf_size == CHANNEL_BUFFER_SIZE){
 	TIMER_enable_interrupt(0);
@@ -115,7 +114,7 @@ int main(int argc, char** argv) {
   while(1){
     if(UART_getData(uart_fd, (uint8_t*)&data_received , sizeof(Data)) == 1){
       
-      //send_msg(uart_fd,"test txt", sizeof("test txt"));
+      //delay per aspettare che il main pc si metta in lettura
       _delay_ms(100);
       //se ricevo un pkg valido ne controllo il tipo
       if(data_received.data_type == TYPE_INITPKG){
@@ -138,14 +137,13 @@ int main(int argc, char** argv) {
 	buf.chbuf_start = 0;
 	buf.chbuf_size = 0;
 	mode = pkg.mode; 
-	
+	int c =  0,pin = 0;
+	uint32_t readings_current = 0;
 	if(mode == 0) {
 	  //continuous mode
 	  //send_msg(uart_fd,"continuos",sizeof("continuous"));
 	  TIMER_set_frequency(pkg.sampling_freq);
 	  TIMER_enable_interrupt(1);
-	  int c =  0,pin = 0;
-	  uint32_t readings_current = 0;
      	  while(readings_current < readings_todo){
 	    if (buf.chbuf_size){
 	      for(c = 0; c < channels_amount; c++){
@@ -179,8 +177,6 @@ int main(int argc, char** argv) {
 	  trigger_value = pkg.trigger;
 	  TIMER_set_frequency(pkg.sampling_freq);
 	  TIMER_enable_interrupt(1);
-	  int c =  0,pin = 0;
-	  uint32_t readings_current = 0;
 	  while(buf.chbuf_size < CHANNEL_BUFFER_SIZE);
      	  while(buf.chbuf_size){
 	    for(c = 0; c < channels_amount; c++){
@@ -199,7 +195,7 @@ int main(int argc, char** argv) {
 	}
       }else{
 	//data type non riconosciuto
-	send_msg(uart_fd,"received UNVALID",sizeof("received UNVALID"));
+	send_msg(uart_fd,"corrupted datatype",sizeof("corrupted datatype"));
       }
     }
     else{

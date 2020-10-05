@@ -27,7 +27,7 @@ void ADC_init(void){
   ADMUX = (1 << 6) |  (1 << ADLAR);
 }
 
-
+//funzione basso overhead ed 1 lettura ogni 13 cicli adc
 uint8_t ADC_read_pin(uint8_t pin){
   uint8_t res;
   ADMUX = (1 << 6) |  (1 << ADLAR) |(pin & 0x07);
@@ -46,7 +46,7 @@ uint8_t ADC_read_pin(uint8_t pin){
   return res;
 }
 
-//funzione init + read_pin alto overhead
+//funzione init + read_pin alto overhead e una lettura ogni 25 cicli adc
 uint8_t ADC_single_conversion(uint8_t pin){
   uint8_t res;
 
@@ -80,6 +80,7 @@ uint8_t ADC_single_conversion(uint8_t pin){
   return res;
 }
 
+//deprecated funzioni per il freerunning (lettura al massimo della frequenza possible)
 void ADC_freerunnig_start(uint8_t pin){
 
   DIDR0 = 0x00;           //disabilito gli input digitali sui pin a0-a15
@@ -106,7 +107,9 @@ void ADC_freerunnig_start(uint8_t pin){
   //NB: la lettura dei valori andra fatta durante le ISR degli interrupt di conversion complete
 }
 
-void ADC_freerunnig_stop(int arg){
+
+//deprecated funzioni per il freerunning (lettura al massimo della frequenza possible)
+void ADC_freerunnig_stop(void){
   ADCSRA &= ~(1 << ADEN) & ~(1<<ADATE); //azzero il bit che abilita l'ADC e quello che abilita l'auto trigger
 }
 
